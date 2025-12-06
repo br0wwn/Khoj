@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import alertService from '../services/alertService';
+import AlertCard from '../components/AlertCard';
 
 const Profile = () => {
   const { user, userType, setUser } = useAuth();
@@ -8,6 +10,9 @@ const Profile = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [myAlerts, setMyAlerts] = useState([]);
+  const [alertsLoading, setAlertsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'alerts'
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -208,9 +213,56 @@ const Profile = () => {
     }
   };
 
+  // Fetch user's alerts
+  useEffect(() => {
+    if (activeTab === 'alerts') {
+      fetchMyAlerts();
+    }
+  }, [activeTab]);
+
+  const fetchMyAlerts = async () => {
+    setAlertsLoading(true);
+    try {
+      const response = await alertService.getMyAlerts();
+      if (response.success) {
+        setMyAlerts(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching my alerts:', err);
+    } finally {
+      setAlertsLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">My Profile</h1>
+
+      {/* Tab Navigation */}
+      <div className="mb-6 border-b border-gray-200">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+              activeTab === 'profile'
+                ? 'text-blue-600 border-blue-600'
+                : 'text-gray-600 border-transparent hover:text-gray-800'
+            }`}
+          >
+            Profile Information
+          </button>
+          <button
+            onClick={() => setActiveTab('alerts')}
+            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+              activeTab === 'alerts'
+                ? 'text-blue-600 border-blue-600'
+                : 'text-gray-600 border-transparent hover:text-gray-800'
+            }`}
+          >
+            My Alerts ({myAlerts.length})
+          </button>
+        </div>
+      </div>
 
       {message.text && (
         <div className={`mb-4 p-4 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
@@ -218,6 +270,8 @@ const Profile = () => {
         </div>
       )}
 
+      {/* Profile Information Tab */}
+      {activeTab === 'profile' && (
       <div className="flex gap-6">
         {/* Left Sidebar - Profile Information */}
         <div className="w-80 flex-shrink-0">
@@ -528,6 +582,38 @@ const Profile = () => {
           )}
         </div>
       </div>
+      )}
+
+      {/* My Alerts Tab */}
+      {activeTab === 'alerts' && (
+        <div>
+          {alertsLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-gray-500">Loading your alerts...</div>
+            </div>
+          ) : myAlerts.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">No alerts yet</h2>
+              <p className="text-gray-600 mb-4">You haven't created any alerts yet.</p>
+              <a
+                href="/"
+                className="inline-block bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Create Your First Alert
+              </a>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {myAlerts.map((alert) => (
+                <AlertCard key={alert._id} alert={alert} variant="list" />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -9,6 +9,7 @@ import Statistics from './pages/Statistics.jsx';
 import Profile from './pages/Profile.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
+import AlertDetails from './pages/AlertDetails.jsx';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Navbar />
           <Routes>
             <Route path="/" element={<Feed />} />
+            <Route path="/alerts/:id" element={<AlertDetails />} />
             <Route path="/report" element={<Report />} />
             <Route path="/group" element={<Group />} />
             <Route path="/statistics" element={<Statistics />} />
