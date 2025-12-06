@@ -1,4 +1,5 @@
 const Police = require('../models/police');
+const authUtils = require('../utils/authUtils');
 
 // @desc    Register a new police officer
 // @route   POST /api/auth/police/signup
@@ -21,13 +22,24 @@ exports.signup = async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!name || !email || !password || !policeId || !badgeNumber ||
-            !rank || !department || !station || !district || !phoneNumber ||
-            !dateOfBirth || !joiningDate) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please provide all required fields'
-            });
+        const fieldsValidation = authUtils.validateRequiredFields(
+            {
+                name, email, password, policeId, badgeNumber,
+                rank, department, station, district, phoneNumber,
+                dateOfBirth, joiningDate
+            },
+            ['name', 'email', 'password', 'policeId', 'badgeNumber',
+             'rank', 'department', 'station', 'district', 'phoneNumber',
+             'dateOfBirth', 'joiningDate']
+        );
+        if (!fieldsValidation.isValid) {
+            return authUtils.sendErrorResponse(res, 400, fieldsValidation.message);
+        }
+
+        // Validate password
+        const passwordValidation = authUtils.validatePassword(password);
+        if (!passwordValidation.isValid) {
+            return authUtils.sendErrorResponse(res, 400, passwordValidation.message);
         }
 
         // Check if police officer already exists
@@ -36,10 +48,7 @@ exports.signup = async (req, res) => {
         });
 
         if (existingPolice) {
-            return res.status(400).json({
-                success: false,
-                message: 'Police officer with this email, Police ID, or Badge Number already exists'
-            });
+            return authUtils.sendErrorResponse(res, 400, 'Police officer with this email, Police ID, or Badge Number already exists');
         }
 
         // Create new police officer
@@ -59,32 +68,14 @@ exports.signup = async (req, res) => {
         });
 
         // Create session - login immediately
-        req.session.userId = police._id;
-        req.session.userType = 'police';
+        authUtils.createSession(req, police._id, 'police');
 
-        res.status(201).json({
-            success: true,
-            message: 'Police officer registered successfully.',
-            police: {
-                id: police._id,
-                name: police.name,
-                email: police.email,
-                policeId: police.policeId,
-                badgeNumber: police.badgeNumber,
-                rank: police.rank,
-                department: police.department,
-                station: police.station,
-                district: police.district,
-                createdAt: police.createdAt
-            },
+        authUtils.sendSuccessResponse(res, 201, 'Police officer registered successfully.', {
+            police: authUtils.formatUserResponse(police, 'police'),
             userType: 'police'
         });
     } catch (error) {
-        console.error('Police signup error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Error registering police officer'
-        });
+        authUtils.sendErrorResponse(res, 500, error.message || 'Error registering police officer', error);
     }
 };
 
@@ -95,60 +86,33 @@ exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Validate fields
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please provide email and password'
-            });
+        // Validate credentials
+        const credentialsValidation = authUtils.validateLoginCredentials(email, password);
+        if (!credentialsValidation.isValid) {
+            return authUtils.sendErrorResponse(res, 400, credentialsValidation.message);
         }
 
         // Find police officer by email
         const police = await Police.findOne({ email });
         if (!police) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid email or password'
-            });
+            return authUtils.sendErrorResponse(res, 401, 'Invalid email or password');
         }
 
         // Check password
         const isPasswordValid = await police.comparePassword(password);
         if (!isPasswordValid) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid email or password'
-            });
+            return authUtils.sendErrorResponse(res, 401, 'Invalid email or password');
         }
 
         // Create session (no verification check needed)
-        req.session.userId = police._id;
-        req.session.userType = 'police';
+        authUtils.createSession(req, police._id, 'police');
 
-        res.status(200).json({
-            success: true,
-            message: 'Login successful',
-            police: {
-                id: police._id,
-                name: police.name,
-                email: police.email,
-                policeId: police.policeId,
-                badgeNumber: police.badgeNumber,
-                rank: police.rank,
-                department: police.department,
-                station: police.station,
-                district: police.district,
-                verified: police.verified,
-                createdAt: police.createdAt
-            },
+        authUtils.sendSuccessResponse(res, 200, 'Login successful', {
+            police: authUtils.formatUserResponse(police, 'police'),
             userType: 'police'
         });
     } catch (error) {
-        console.error('Police login error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error logging in'
-        });
+        authUtils.sendErrorResponse(res, 500, 'Error logging in', error);
     }
 };
 
@@ -157,25 +121,10 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.logout = async (req, res) => {
     try {
-        req.session.destroy((err) => {
-            if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error logging out'
-                });
-            }
-            res.clearCookie('connect.sid');
-            res.status(200).json({
-                success: true,
-                message: 'Logout successful'
-            });
-        });
+        await authUtils.destroySession(req, res);
+        authUtils.sendSuccessResponse(res, 200, 'Logout successful');
     } catch (error) {
-        console.error('Police logout error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error logging out'
-        });
+        authUtils.sendErrorResponse(res, 500, 'Error logging out', error);
     }
 };
 
@@ -187,37 +136,14 @@ exports.getCurrentPolice = async (req, res) => {
         const police = await Police.findById(req.session.userId).select('-password');
 
         if (!police) {
-            return res.status(404).json({
-                success: false,
-                message: 'Police officer not found'
-            });
+            return authUtils.sendErrorResponse(res, 404, 'Police officer not found');
         }
 
-        res.status(200).json({
-            success: true,
-            police: {
-                id: police._id,
-                name: police.name,
-                email: police.email,
-                policeId: police.policeId,
-                badgeNumber: police.badgeNumber,
-                rank: police.rank,
-                department: police.department,
-                station: police.station,
-                district: police.district,
-                phoneNumber: police.phoneNumber,
-                dateOfBirth: police.dateOfBirth,
-                joiningDate: police.joiningDate,
-                profilePicture: police.profilePicture,
-                createdAt: police.createdAt
-            },
+        authUtils.sendSuccessResponse(res, 200, 'Police data fetched successfully', {
+            police: authUtils.formatUserResponse(police, 'police'),
             userType: 'police'
         });
     } catch (error) {
-        console.error('Get current police error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching police data'
-        });
+        authUtils.sendErrorResponse(res, 500, 'Error fetching police data', error);
     }
 };

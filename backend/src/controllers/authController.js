@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const authUtils = require('../utils/authUtils');
 
 // @desc    Register a new user
 // @route   POST /api/auth/signup
@@ -8,20 +9,24 @@ exports.signup = async (req, res) => {
     const { name, email, password, dateOfBirth, bio } = req.body;
 
     // Validate required fields
-    if (!name || !email || !password || !dateOfBirth) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide all required fields: name, email, password, and date of birth'
-      });
+    const fieldsValidation = authUtils.validateRequiredFields(
+      { name, email, password, dateOfBirth },
+      ['name', 'email', 'password', 'dateOfBirth']
+    );
+    if (!fieldsValidation.isValid) {
+      return authUtils.sendErrorResponse(res, 400, fieldsValidation.message);
+    }
+
+    // Validate password
+    const passwordValidation = authUtils.validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return authUtils.sendErrorResponse(res, 400, passwordValidation.message);
     }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'User with this email already exists'
-      });
+      return authUtils.sendErrorResponse(res, 400, 'User with this email already exists');
     }
 
     // Create new user
@@ -34,27 +39,13 @@ exports.signup = async (req, res) => {
     });
 
     // Create session
-    req.session.userId = user._id;
-    req.session.userType = 'citizen';
+    authUtils.createSession(req, user._id, 'citizen');
 
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        dateOfBirth: user.dateOfBirth,
-        bio: user.bio,
-        createdAt: user.createdAt
-      }
+    authUtils.sendSuccessResponse(res, 201, 'User registered successfully', {
+      user: authUtils.formatUserResponse(user, 'citizen')
     });
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Error registering user'
-    });
+    authUtils.sendErrorResponse(res, 500, error.message || 'Error registering user', error);
   }
 };
 
@@ -65,54 +56,32 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate fields
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide email and password'
-      });
+    // Validate credentials
+    const credentialsValidation = authUtils.validateLoginCredentials(email, password);
+    if (!credentialsValidation.isValid) {
+      return authUtils.sendErrorResponse(res, 400, credentialsValidation.message);
     }
 
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password'
-      });
+      return authUtils.sendErrorResponse(res, 401, 'Invalid email or password');
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password'
-      });
+      return authUtils.sendErrorResponse(res, 401, 'Invalid email or password');
     }
 
     // Create session
-    req.session.userId = user._id;
-    req.session.userType = 'citizen';
+    authUtils.createSession(req, user._id, 'citizen');
 
-    res.status(200).json({
-      success: true,
-      message: 'Login successful',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        dateOfBirth: user.dateOfBirth,
-        bio: user.bio,
-        createdAt: user.createdAt
-      }
+    authUtils.sendSuccessResponse(res, 200, 'Login successful', {
+      user: authUtils.formatUserResponse(user, 'citizen')
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error logging in'
-    });
+    authUtils.sendErrorResponse(res, 500, 'Error logging in', error);
   }
 };
 
@@ -121,25 +90,10 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.logout = async (req, res) => {
   try {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: 'Error logging out'
-        });
-      }
-      res.clearCookie('connect.sid');
-      res.status(200).json({
-        success: true,
-        message: 'Logout successful'
-      });
-    });
+    await authUtils.destroySession(req, res);
+    authUtils.sendSuccessResponse(res, 200, 'Logout successful');
   } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error logging out'
-    });
+    authUtils.sendErrorResponse(res, 500, 'Error logging out', error);
   }
 };
 
@@ -151,28 +105,13 @@ exports.getCurrentUser = async (req, res) => {
     const user = await User.findById(req.session.userId).select('-password');
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      return authUtils.sendErrorResponse(res, 404, 'User not found');
     }
 
-    res.status(200).json({
-      success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        dateOfBirth: user.dateOfBirth,
-        bio: user.bio,
-        createdAt: user.createdAt
-      }
+    authUtils.sendSuccessResponse(res, 200, 'User data fetched successfully', {
+      user: authUtils.formatUserResponse(user, 'citizen')
     });
   } catch (error) {
-    console.error('Get current user error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching user data'
-    });
+    authUtils.sendErrorResponse(res, 500, 'Error fetching user data', error);
   }
 };
