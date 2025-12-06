@@ -5,7 +5,9 @@ const MongoStore = require('connect-mongo');
 const cors = require('cors');
 const connectDB = require('./src/config/database');
 const authRoutes = require('./src/routes/authRoutes');
+const policeAuthRoutes = require('./src/routes/policeAuthRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
+const policeProfileRoutes = require('./src/routes/policeProfileRoutes');
 
 const app = express();
 
@@ -43,7 +45,9 @@ app.use(session({
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/police', policeAuthRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/profile/police', policeProfileRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

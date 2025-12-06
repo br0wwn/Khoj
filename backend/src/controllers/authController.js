@@ -35,6 +35,7 @@ exports.signup = async (req, res) => {
 
     // Create session
     req.session.userId = user._id;
+    req.session.userType = 'citizen';
 
     res.status(201).json({
       success: true,
@@ -92,6 +93,7 @@ exports.login = async (req, res) => {
 
     // Create session
     req.session.userId = user._id;
+    req.session.userType = 'citizen';
 
     res.status(200).json({
       success: true,
@@ -147,7 +149,7 @@ exports.logout = async (req, res) => {
 exports.getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,

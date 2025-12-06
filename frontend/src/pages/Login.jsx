@@ -7,6 +7,7 @@ const Login = () => {
     email: '',
     password: ''
   });
+  const [userType, setUserType] = useState('citizen');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -32,7 +33,7 @@ const Login = () => {
       return;
     }
 
-    const result = await login(formData);
+    const result = await login(formData, userType);
     setLoading(false);
 
     if (result.success) {
@@ -56,14 +57,38 @@ const Login = () => {
             </Link>
           </p>
         </div>
-        
+
+        {/* User Type Toggle */}
+        <div className="flex rounded-lg overflow-hidden border border-gray-300">
+          <button
+            type="button"
+            onClick={() => setUserType('citizen')}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${userType === 'citizen'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+          >
+            Login as Citizen
+          </button>
+          <button
+            type="button"
+            onClick={() => setUserType('police')}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${userType === 'police'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+          >
+            Login as Police
+          </button>
+        </div>
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
-          
+
           <div className="rounded-md shadow-sm space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -81,7 +106,7 @@ const Login = () => {
                 placeholder="Email address"
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password

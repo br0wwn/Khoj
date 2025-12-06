@@ -6,6 +6,8 @@ exports.requireAuth = (req, res, next) => {
       message: 'Authentication required. Please login to access this resource.'
     });
   }
+  req.userId = req.session.userId;
+  req.userType = req.session.userType;
   next();
 };
 

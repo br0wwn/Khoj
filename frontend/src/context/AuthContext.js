@@ -13,6 +13,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Check if user is already logged in on mount
@@ -22,22 +23,39 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const response = await authService.getCurrentUser();
+      // Try citizen first
+      let response = await authService.getCurrentUser();
       if (response.success) {
         setUser(response.user);
+        setUserType('citizen');
+        setLoading(false);
+        return;
       }
     } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
+      // If citizen check fails, try police
+      try {
+        const policeResponse = await authService.getCurrentPolice();
+        if (policeResponse.success) {
+          setUser(policeResponse.police);
+          setUserType('police');
+          setLoading(false);
+          return;
+        }
+      } catch (policeError) {
+        // Both failed
+        setUser(null);
+        setUserType(null);
+      }
     }
+    setLoading(false);
   };
 
-  const login = async (credentials) => {
+  const login = async (credentials, type = 'citizen') => {
     try {
-      const response = await authService.login(credentials);
+      const response = await authService.login(credentials, type);
       if (response.success) {
-        setUser(response.user);
+        setUser(type === 'police' ? response.police : response.user);
+        setUserType(type);
         return { success: true };
       }
       return { success: false, message: response.message };
@@ -49,11 +67,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (userData) => {
+  const signup = async (userData, type = 'citizen') => {
     try {
-      const response = await authService.signup(userData);
+      const response = await authService.signup(userData, type);
       if (response.success) {
-        setUser(response.user);
+        setUser(type === 'police' ? response.police : response.user);
+        setUserType(type);
         return { success: true };
       }
       return { success: false, message: response.message };
@@ -67,8 +86,9 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await authService.logout();
+      await authService.logout(userType);
       setUser(null);
+      setUserType(null);
       return { success: true };
     } catch (error) {
       return {
@@ -80,6 +100,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    userType,
     setUser,
     loading,
     login,

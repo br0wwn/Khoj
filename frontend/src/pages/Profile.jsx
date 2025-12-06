@@ -3,16 +3,23 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
 const Profile = () => {
-  const { user, setUser } = useAuth();
+  const { user, userType, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  
+
   const [formData, setFormData] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
-    dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : ''
+    dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '',
+    // Police-specific fields
+    rank: user?.rank || '',
+    department: user?.department || '',
+    station: user?.station || '',
+    district: user?.district || '',
+    phoneNumber: user?.phoneNumber || '',
+    joiningDate: user?.joiningDate ? new Date(user.joiningDate).toISOString().split('T')[0] : ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -63,19 +70,25 @@ const Profile = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await axios.put('/api/profile/update', formData, {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/update'
+        : '/api/profile/update';
+
+      const response = await axios.put(endpoint, formData, {
         withCredentials: true
       });
 
       if (response.data.success) {
-        setUser(response.data.user);
+        // Update user with correct key (police or user)
+        const updatedUser = userType === 'police' ? response.data.police : response.data.user;
+        setUser(updatedUser);
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
         setIsEditing(false);
       }
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to update profile' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to update profile'
       });
     } finally {
       setLoading(false);
@@ -100,7 +113,11 @@ const Profile = () => {
     }
 
     try {
-      const response = await axios.put('/api/profile/change-password', {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/change-password'
+        : '/api/profile/change-password';
+
+      const response = await axios.put(endpoint, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }, {
@@ -113,9 +130,9 @@ const Profile = () => {
         setIsChangingPassword(false);
       }
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to change password' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to change password'
       });
     } finally {
       setLoading(false);
@@ -135,7 +152,11 @@ const Profile = () => {
     formDataImage.append('profilePicture', selectedImage);
 
     try {
-      const response = await axios.post('/api/profile/upload-picture', formDataImage, {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/upload-picture'
+        : '/api/profile/upload-picture';
+
+      const response = await axios.post(endpoint, formDataImage, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });
@@ -146,9 +167,9 @@ const Profile = () => {
         setSelectedImage(null);
       }
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to upload picture' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to upload picture'
       });
     } finally {
       setLoading(false);
@@ -164,7 +185,11 @@ const Profile = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await axios.delete('/api/profile/delete-picture', {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/delete-picture'
+        : '/api/profile/delete-picture';
+
+      const response = await axios.delete(endpoint, {
         withCredentials: true
       });
 
@@ -174,9 +199,9 @@ const Profile = () => {
         setMessage({ type: 'success', text: 'Profile picture deleted successfully!' });
       }
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to delete picture' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to delete picture'
       });
     } finally {
       setLoading(false);
@@ -216,10 +241,51 @@ const Profile = () => {
                   {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'Not set'}
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Bio</label>
-                <p className="mt-1 text-gray-900 text-sm">{user?.bio || 'No bio yet'}</p>
-              </div>
+
+              {/* Conditional display based on user type */}
+              {userType === 'police' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Police ID</label>
+                    <p className="mt-1 text-gray-900">{user?.policeId || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Badge Number</label>
+                    <p className="mt-1 text-gray-900">{user?.badgeNumber || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Rank</label>
+                    <p className="mt-1 text-gray-900">{user?.rank || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Department</label>
+                    <p className="mt-1 text-gray-900">{user?.department || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Station</label>
+                    <p className="mt-1 text-gray-900">{user?.station || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">District</label>
+                    <p className="mt-1 text-gray-900">{user?.district || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <p className="mt-1 text-gray-900">{user?.phoneNumber || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Joining Date</label>
+                    <p className="mt-1 text-gray-900">
+                      {user?.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : 'Not set'}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Bio</label>
+                  <p className="mt-1 text-gray-900 text-sm">{user?.bio || 'No bio yet'}</p>
+                </div>
+              )}
             </div>
 
             {/* Edit Profile Button */}
@@ -294,17 +360,96 @@ const Profile = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                    <textarea
-                      name="bio"
-                      value={formData.bio}
-                      onChange={handleChange}
-                      rows="4"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Tell us about yourself..."
-                    />
-                  </div>
+
+                  {/* Conditional fields based on user type */}
+                  {userType === 'police' ? (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Rank</label>
+                        <select
+                          name="rank"
+                          value={formData.rank}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select Rank</option>
+                          <option value="Constable">Constable</option>
+                          <option value="Assistant Sub-Inspector">Assistant Sub-Inspector</option>
+                          <option value="Sub-Inspector">Sub-Inspector</option>
+                          <option value="Inspector">Inspector</option>
+                          <option value="Deputy Superintendent">Deputy Superintendent</option>
+                          <option value="Superintendent">Superintendent</option>
+                          <option value="Additional Deputy Inspector General">Additional Deputy Inspector General</option>
+                          <option value="Deputy Inspector General">Deputy Inspector General</option>
+                          <option value="Inspector General">Inspector General</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                        <input
+                          type="text"
+                          name="department"
+                          value={formData.department}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Station</label>
+                        <input
+                          type="text"
+                          name="station"
+                          value={formData.station}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+                        <input
+                          type="text"
+                          name="district"
+                          value={formData.district}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input
+                          type="tel"
+                          name="phoneNumber"
+                          value={formData.phoneNumber}
+                          onChange={handleChange}
+                          placeholder="01XXXXXXXXX"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
+                        <input
+                          type="date"
+                          name="joiningDate"
+                          value={formData.joiningDate}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                      <textarea
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleChange}
+                        rows="4"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Tell us about yourself..."
+                      />
+                    </div>
+                  )}
+
                   <button
                     type="submit"
                     disabled={loading}

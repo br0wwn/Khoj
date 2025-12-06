@@ -7,9 +7,10 @@ axios.defaults.withCredentials = true;
 
 const authService = {
   // Signup
-  signup: async (userData) => {
+  signup: async (userData, userType = 'citizen') => {
     try {
-      const response = await axios.post(`${API_URL}/signup`, userData);
+      const endpoint = userType === 'police' ? `${API_URL}/police/signup` : `${API_URL}/signup`;
+      const response = await axios.post(endpoint, userData);
       return response.data;
     } catch (error) {
       console.error('Signup error:', error.response || error);
@@ -18,9 +19,10 @@ const authService = {
   },
 
   // Login
-  login: async (credentials) => {
+  login: async (credentials, userType = 'citizen') => {
     try {
-      const response = await axios.post(`${API_URL}/login`, credentials);
+      const endpoint = userType === 'police' ? `${API_URL}/police/login` : `${API_URL}/login`;
+      const response = await axios.post(endpoint, credentials);
       return response.data;
     } catch (error) {
       console.error('Login error:', error.response || error);
@@ -29,9 +31,10 @@ const authService = {
   },
 
   // Logout
-  logout: async () => {
+  logout: async (userType = 'citizen') => {
     try {
-      const response = await axios.post(`${API_URL}/logout`);
+      const endpoint = userType === 'police' ? `${API_URL}/police/logout` : `${API_URL}/logout`;
+      const response = await axios.post(endpoint);
       return response.data;
     } catch (error) {
       console.error('Logout error:', error.response || error);
@@ -46,6 +49,17 @@ const authService = {
       return response.data;
     } catch (error) {
       console.error('Get user error:', error.response || error);
+      throw error;
+    }
+  },
+
+  // Get current police officer
+  getCurrentPolice: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/police/me`);
+      return response.data;
+    } catch (error) {
+      console.error('Get police error:', error.response || error);
       throw error;
     }
   }
