@@ -4,6 +4,7 @@ import alertService from '../services/alertService';
 const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -20,6 +21,20 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
     setError('');
   };
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(prevFiles => [...prevFiles, ...files]);
+    setError('');
+  };
+
+  const handleRemoveFile = (index) => {
+    setSelectedFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+
+  const getFilePreview = (file) => {
+    return URL.createObjectURL(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -34,7 +49,22 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
     try {
       const response = await alertService.createAlert(formData);
       if (response.success) {
-        onAlertCreated(response.data);
+        let finalAlert = response.data;
+        
+        // Upload media if files were selected
+        if (selectedFiles.length > 0) {
+          try {
+            const mediaResponse = await alertService.uploadAlertMedia(finalAlert._id, selectedFiles);
+            if (mediaResponse.success) {
+              finalAlert = mediaResponse.data;
+            }
+          } catch (mediaErr) {
+            console.error('Failed to upload media:', mediaErr);
+            // Continue even if media upload fails
+          }
+        }
+        
+        onAlertCreated(finalAlert);
         setFormData({
           title: '',
           description: '',
@@ -42,6 +72,7 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
           contact_info: '',
           media: []
         });
+        setSelectedFiles([]);
         onClose();
       }
     } catch (err) {
@@ -137,6 +168,64 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Phone number or email"
               />
+            </div>
+
+            <div>
+              <label htmlFor="media" className="block text-sm font-medium text-gray-700 mb-1">
+                Media (Optional)
+              </label>
+              <input
+                type="file"
+                id="media"
+                multiple
+                accept="image/*,video/*"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {selectedFiles.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    {selectedFiles.length} file(s) selected
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                        {file.type.startsWith('image/') ? (
+                          <img
+                            src={getFilePreview(file)}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-32 object-cover"
+                          />
+                        ) : file.type.startsWith('video/') ? (
+                          <video
+                            src={getFilePreview(file)}
+                            className="w-full h-32 object-cover bg-black"
+                          />
+                        ) : (
+                          <div className="w-full h-32 bg-gray-100 flex items-center justify-center">
+                            <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFile(index)}
+                          className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                          title="Remove file"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1 truncate">
+                          {file.name}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
