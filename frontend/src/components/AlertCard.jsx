@@ -50,14 +50,9 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
                 <span>{formatDate(alert.createdAt)}</span>
               </div>
             </div>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-              }}
-              className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
+            <span className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium inline-block">
               View Details
-            </button>
+            </span>
           </div>
           {alert.media && alert.media.length > 0 && (
             <div className="mt-4 flex gap-2">
@@ -129,7 +124,9 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-500">{formatDate(alert.createdAt)}</span>
-            
+            <span className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium inline-block">
+              View Details
+            </span>
           </div>
         </div>
       </div>
