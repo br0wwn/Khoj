@@ -26,6 +26,16 @@ const alertSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  district: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  upazila: {
+    type: String,
+    required: true,
+    trim: true
+  },
   location: {
     type: String,
     required: true,

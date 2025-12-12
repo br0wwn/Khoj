@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import authService from '../services/authService';
 
 const AuthContext = createContext(null);
@@ -15,10 +15,50 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Use ref to store broadcast channel
+  const authChannelRef = useRef(null);
+
+  // Initialize broadcast channel
+  useEffect(() => {
+    // Create broadcast channel for cross-tab communication
+    authChannelRef.current = new BroadcastChannel('auth-channel');
+    
+    return () => {
+      if (authChannelRef.current) {
+        authChannelRef.current.close();
+      }
+    };
+  }, []);
 
   // Check if user is already logged in on mount
   useEffect(() => {
     checkAuth();
+
+    // Listen for auth changes from other tabs
+    const handleAuthMessage = (event) => {
+      console.log('Received auth message:', event.data);
+      if (event.data.type === 'LOGIN') {
+        setUser(event.data.user);
+        setUserType(event.data.userType);
+      } else if (event.data.type === 'LOGOUT') {
+        setUser(null);
+        setUserType(null);
+      } else if (event.data.type === 'AUTH_CHECK') {
+        checkAuth();
+      }
+    };
+
+    if (authChannelRef.current) {
+      authChannelRef.current.addEventListener('message', handleAuthMessage);
+    }
+
+    // Cleanup
+    return () => {
+      if (authChannelRef.current) {
+        authChannelRef.current.removeEventListener('message', handleAuthMessage);
+      }
+    };
   }, []);
 
   const checkAuth = async () => {
@@ -54,8 +94,20 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.login(credentials, type);
       if (response.success) {
-        setUser(type === 'police' ? response.police : response.user);
+        const userData = type === 'police' ? response.police : response.user;
+        setUser(userData);
         setUserType(type);
+        
+        // Notify other tabs about login
+        if (authChannelRef.current) {
+          console.log('Broadcasting LOGIN to other tabs');
+          authChannelRef.current.postMessage({
+            type: 'LOGIN',
+            user: userData,
+            userType: type
+          });
+        }
+        
         return { success: true };
       }
       return { success: false, message: response.message };
@@ -71,8 +123,20 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.signup(userData, type);
       if (response.success) {
-        setUser(type === 'police' ? response.police : response.user);
+        const newUser = type === 'police' ? response.police : response.user;
+        setUser(newUser);
         setUserType(type);
+        
+        // Notify other tabs about signup/login
+        if (authChannelRef.current) {
+          console.log('Broadcasting SIGNUP/LOGIN to other tabs');
+          authChannelRef.current.postMessage({
+            type: 'LOGIN',
+            user: newUser,
+            userType: type
+          });
+        }
+        
         return { success: true };
       }
       return { success: false, message: response.message };
@@ -89,6 +153,15 @@ export const AuthProvider = ({ children }) => {
       await authService.logout(userType);
       setUser(null);
       setUserType(null);
+      
+      // Notify other tabs about logout
+      if (authChannelRef.current) {
+        console.log('Broadcasting LOGOUT to other tabs');
+        authChannelRef.current.postMessage({
+          type: 'LOGOUT'
+        });
+      }
+      
       return { success: true };
     } catch (error) {
       return {

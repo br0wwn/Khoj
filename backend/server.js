@@ -3,6 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const connectDB = require('./src/config/database');
 const authRoutes = require('./src/routes/authRoutes');
 const policeAuthRoutes = require('./src/routes/policeAuthRoutes');
@@ -26,16 +27,19 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Session store configuration
+const sessionStore = MongoStore.create({
+  mongoUrl: process.env.MONGODB_URI,
+  collectionName: 'sessions',
+  touchAfter: 24 * 3600 // lazy session update (in seconds)
+});
+
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    collectionName: 'sessions',
-    touchAfter: 24 * 3600 // lazy session update (in seconds)
-  }),
+  store: sessionStore,
   cookie: {
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     httpOnly: true,
@@ -68,6 +72,64 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+});
+
+// Graceful shutdown - Clear all sessions when server stops
+const gracefulShutdown = async (signal) => {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+  
+  try {
+    // Clear all sessions from the database using direct MongoDB connection
+    console.log('Clearing all sessions from database...');
+    
+    const db = mongoose.connection.db;
+    if (db) {
+      const sessionsCollection = db.collection('sessions');
+      const result = await sessionsCollection.deleteMany({});
+      console.log(`✓ Deleted ${result.deletedCount} session(s) from database.`);
+    } else {
+      console.log('⚠ Database connection not available, skipping session cleanup.');
+    }
+    
+    // Close server
+    server.close(async () => {
+      console.log('✓ Server closed.');
+      
+      // Close database connection (no callback in newer Mongoose)
+      try {
+        await mongoose.connection.close();
+        console.log('✓ MongoDB connection closed.');
+        process.exit(0);
+      } catch (err) {
+        console.error('✗ Error closing MongoDB connection:', err);
+        process.exit(1);
+      }
+    });
+    
+    // Force close after 10 seconds
+    setTimeout(() => {
+      console.error('⚠ Forced shutdown after timeout.');
+      process.exit(1);
+    }, 10000);
+  } catch (error) {
+    console.error('✗ Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  gracefulShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('unhandledRejection');
 });

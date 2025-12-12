@@ -1,17 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import alertService from '../services/alertService';
+import areaData from '../data/area.json';
 
 const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [districts] = useState([...areaData].sort((a, b) => a.district.localeCompare(b.district)));
+  const [upazilas, setUpazilas] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    district: '',
+    upazila: '',
     location: '',
     contact_info: '',
     media: []
   });
+
+  useEffect(() => {
+    // Update upazilas when district changes
+    if (formData.district) {
+      const selectedDistrict = districts.find(d => d.district === formData.district);
+      setUpazilas(selectedDistrict ? [...selectedDistrict.upazilas].sort() : []);
+      // Reset upazila when district changes
+      setFormData(prev => ({ ...prev, upazila: '' }));
+    } else {
+      setUpazilas([]);
+    }
+  }, [formData.district, districts]);
 
   const handleChange = (e) => {
     setFormData({
@@ -39,7 +56,7 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.title || !formData.description || !formData.location) {
+    if (!formData.title || !formData.description || !formData.district || !formData.upazila || !formData.location) {
       setError('Please fill in all required fields');
       return;
     }
@@ -47,6 +64,7 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
     setLoading(true);
 
     try {
+      console.log('Submitting alert with data:', formData);
       const response = await alertService.createAlert(formData);
       if (response.success) {
         let finalAlert = response.data;
@@ -68,6 +86,8 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
         setFormData({
           title: '',
           description: '',
+          district: '',
+          upazila: '',
           location: '',
           contact_info: '',
           media: []
@@ -139,9 +159,54 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="district" className="block text-sm font-medium text-gray-700 mb-1">
+                  District <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="district"
+                  name="district"
+                  value={formData.district}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select District</option>
+                  {districts.map((dist) => (
+                    <option key={dist.district} value={dist.district}>
+                      {dist.district}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="upazila" className="block text-sm font-medium text-gray-700 mb-1">
+                  Thana/Upazila <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="upazila"
+                  name="upazila"
+                  value={formData.upazila}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={!formData.district}
+                >
+                  <option value="">Select Upazila</option>
+                  {upazilas.map((upazila) => (
+                    <option key={upazila} value={upazila}>
+                      {upazila}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-                Location <span className="text-red-500">*</span>
+                Detailed Location <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -150,7 +215,7 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
                 value={formData.location}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter location"
+                placeholder="e.g., House 10, Road 5, Block A"
                 required
               />
             </div>

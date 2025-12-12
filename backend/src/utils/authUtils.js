@@ -17,15 +17,28 @@ exports.createSession = (req, userId, userType) => {
  * Destroy session and clear cookies
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
- * @returns {Promise} - Resolves with response object
+ * @returns {Promise} - Resolves when session is destroyed
  */
 exports.destroySession = (req, res) => {
   return new Promise((resolve, reject) => {
+    // Get session ID before destroying
+    const sessionId = req.sessionID;
+    
     req.session.destroy((err) => {
       if (err) {
+        console.error('Error destroying session:', err);
         return reject(err);
       }
-      res.clearCookie('connect.sid');
+      
+      // Clear the session cookie
+      res.clearCookie('connect.sid', {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+      });
+      
+      console.log(`Session ${sessionId} destroyed and removed from database`);
       resolve();
     });
   });

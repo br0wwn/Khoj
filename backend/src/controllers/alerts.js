@@ -80,13 +80,13 @@ exports.createAlert = async (req, res) => {
       });
     }
 
-    const { title, description, location, contact_info, media } = req.body;
+    const { title, description, district, upazila, location, contact_info, media } = req.body;
     
     // Validate required fields
-    if (!title || !description || !location) {
+    if (!title || !description || !district || !upazila || !location) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: title, description, location'
+        error: 'Missing required fields: title, description, district, upazila, location'
       });
     }
     
@@ -97,6 +97,8 @@ exports.createAlert = async (req, res) => {
     const newAlert = new Alert({
       title,
       description,
+      district,
+      upazila,
       location,
       contact_info: contact_info || '',
       status: 'active',
@@ -194,7 +196,7 @@ exports.updateAlertDetails = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { title, description, location, contact_info, media } = req.body;
+    const { title, description, district, upazila, location, contact_info, media } = req.body;
     
     // Find alert and check ownership
     const alert = await Alert.findOne({
@@ -212,6 +214,8 @@ exports.updateAlertDetails = async (req, res) => {
     // Update fields
     if (title) alert.title = title;
     if (description) alert.description = description;
+    if (district) alert.district = district;
+    if (upazila) alert.upazila = upazila;
     if (location) alert.location = location;
     if (contact_info !== undefined) alert.contact_info = contact_info;
     if (media) alert.media = media;
