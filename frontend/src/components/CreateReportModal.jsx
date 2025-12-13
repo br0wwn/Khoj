@@ -18,6 +18,7 @@ const CreateReportModal = ({ isOpen, onClose, onReportCreated }) => {
     district: '',
     upazila: '',
     location: '',
+    is_anonymous: false,
     media: []
   });
 
@@ -73,7 +74,8 @@ const CreateReportModal = ({ isOpen, onClose, onReportCreated }) => {
         description: formData.description,
         district: formData.district,
         upazila: formData.upazila,
-        location: formData.location
+        location: formData.location,
+        is_anonymous: formData.is_anonymous
       };
 
       const response = await reportService.createReport(reportData);
@@ -97,6 +99,7 @@ const CreateReportModal = ({ isOpen, onClose, onReportCreated }) => {
           district: '',
           upazila: '',
           location: '',
+          is_anonymous: false,
           media: []
         });
         setSelectedFiles([]);
@@ -257,6 +260,22 @@ const CreateReportModal = ({ isOpen, onClose, onReportCreated }) => {
                 </div>
               )}
             </div>
+
+            {isAuthenticated && (
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_anonymous"
+                  name="is_anonymous"
+                  checked={formData.is_anonymous}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="is_anonymous" className="ml-2 text-sm text-gray-700">
+                  Post anonymously (you won't be able to edit or delete this report later)
+                </label>
+              </div>
+            )}
 
             {!isAuthenticated && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md text-sm">

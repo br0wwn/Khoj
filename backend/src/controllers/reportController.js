@@ -95,6 +95,7 @@ exports.createReport = async (req, res) => {
         userType: userModel
       };
     }
+    // Note: If is_anonymous is true, createdBy will remain undefined (anonymous report)
     
     // Create new report
     const newReport = new Report(reportData);
