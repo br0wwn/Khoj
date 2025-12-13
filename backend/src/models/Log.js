@@ -64,11 +64,11 @@ const logSchema = new mongoose.Schema({
 });
 
 // Virtual for created_at and updated_at
-logSchema.virtual('created_at').get(function() {
+logSchema.virtual('created_at').get(function () {
   return this.createdAt;
 });
 
-logSchema.virtual('updated_at').get(function() {
+logSchema.virtual('updated_at').get(function () {
   return this.updatedAt;
 });
 

@@ -14,11 +14,12 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
+import areaData from '../data/area.json';
 
 const AlertDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, userType, isAuthenticated } = useAuth();
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,6 +27,16 @@ const AlertDetails = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [logMessage, setLogMessage] = useState('');
+  const [addingLog, setAddingLog] = useState(false);
+  const [showLogInput, setShowLogInput] = useState(false);
+  const [logFiles, setLogFiles] = useState([]);
+  const [logTitle, setLogTitle] = useState('');
+  const [logLocation, setLogLocation] = useState('');
+  const [logDistrict, setLogDistrict] = useState('');
+  const [logUpazila, setLogUpazila] = useState('');
+  const [districts] = useState([...areaData].sort((a, b) => a.district.localeCompare(b.district)));
+  const [availableUpazilas, setAvailableUpazilas] = useState([]);
 
   useEffect(() => {
     const fetchAlertDetails = async () => {
@@ -44,19 +55,28 @@ const AlertDetails = () => {
     fetchAlertDetails();
   }, [id]);
 
+  // Update available upazilas when log district changes
   useEffect(() => {
-    // Debug ownership check
-    if (alert && user) {
-      console.log('Ownership check:', {
-        alertCreatedBy: alert.createdBy,
-        userId: user.id,
-        userType: user,
-        isOwner: alert.createdBy?.userId === user.id || 
-                 alert.createdBy?.userId?._id === user.id ||
-                 String(alert.createdBy?.userId) === String(user.id)
-      });
+    if (logDistrict && logDistrict !== '') {
+      const district = districts.find(d => d.district === logDistrict);
+      setAvailableUpazilas(district ? [...district.upazilas].sort() : []);
+    } else {
+      setAvailableUpazilas([]);
     }
-  }, [alert, user]);
+  }, [logDistrict, districts]);
+
+  const fetchAlertDetails = async () => {
+    try {
+      const response = await alertService.getAlertById(id);
+      if (response.success) {
+        setAlert(response.data);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load alert details');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStatusUpdate = async (newStatus) => {
     if (!window.confirm(`Are you sure you want to mark this alert as ${newStatus}?`)) {
@@ -146,6 +166,46 @@ const AlertDetails = () => {
     setAlert(updatedAlert);
   };
 
+  const handleAddLog = async (e) => {
+    e.preventDefault();
+    if (!logMessage.trim()) {
+      window.alert('Please enter a log message');
+      return;
+    }
+
+    setAddingLog(true);
+    try {
+      const formData = new FormData();
+      formData.append('title', logTitle.trim() || `Log Entry - ${new Date().toLocaleDateString()}`);
+      formData.append('description', logMessage.trim());
+      formData.append('location', logLocation.trim());
+      formData.append('district', logDistrict);
+      formData.append('upazila', logUpazila);
+      
+      // Add files
+      logFiles.forEach(file => {
+        formData.append('media', file);
+      });
+      
+      const response = await alertService.addLog(id, formData);
+      if (response.success) {
+        // Refresh alert to get updated logs
+        await fetchAlertDetails();
+        setLogMessage('');
+        setLogTitle('');
+        setLogLocation('');
+        setLogDistrict('');
+        setLogUpazila('');
+        setLogFiles([]);
+        setShowLogInput(false);
+      }
+    } catch (err) {
+      window.alert(err.response?.data?.error || 'Failed to add log');
+    } finally {
+      setAddingLog(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
@@ -202,8 +262,10 @@ const AlertDetails = () => {
     );
   }
 
+  const isPolice = userType === 'police';
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Back button */}
       <button
         onClick={() => navigate('/')}
@@ -215,7 +277,10 @@ const AlertDetails = () => {
         Back to Feed
       </button>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="flex gap-6">
+        {/* Alert Details - Left */}
+        <div className="flex-1">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 text-white">
           <div className="flex justify-between items-start">
@@ -436,6 +501,164 @@ const AlertDetails = () => {
               </div>
             </div>
           )}
+        </div>
+          </div>
+        </div>
+
+        {/* Logs Sidebar - Right */}
+        <div className="w-80 flex-shrink-0">
+          <div className="bg-white rounded-lg shadow-lg p-4 sticky top-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Police Log</h2>
+              {isPolice && !showLogInput && (
+                <button
+                  onClick={() => setShowLogInput(true)}
+                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Add Log
+                </button>
+              )}
+            </div>
+            
+            {/* Log Input - Police Only */}
+            {isPolice && showLogInput && (
+              <form onSubmit={handleAddLog} className="mb-4 space-y-2">
+                <input
+                  type="text"
+                  value={logTitle}
+                  onChange={(e) => setLogTitle(e.target.value)}
+                  placeholder="Title (optional)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  disabled={addingLog}
+                />
+                <textarea
+                  value={logMessage}
+                  onChange={(e) => setLogMessage(e.target.value)}
+                  placeholder="Description*"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                  rows="3"
+                  disabled={addingLog}
+                  autoFocus
+                />
+                <input
+                  type="text"
+                  value={logLocation}
+                  onChange={(e) => setLogLocation(e.target.value)}
+                  placeholder={`Location (default: ${alert.location})`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  disabled={addingLog}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={logDistrict}
+                    onChange={(e) => {
+                      setLogDistrict(e.target.value);
+                      setLogUpazila('');
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    disabled={addingLog}
+                  >
+                    <option value="">Select District (default: {alert.district})</option>
+                    {districts.map((d) => (
+                      <option key={d.district} value={d.district}>
+                        {d.district}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={logUpazila}
+                    onChange={(e) => setLogUpazila(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    disabled={addingLog || !logDistrict}
+                  >
+                    <option value="">Select Upazila (default: {alert.upazila})</option>
+                    {availableUpazilas.map((upazila) => (
+                      <option key={upazila} value={upazila}>
+                        {upazila}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={(e) => setLogFiles(Array.from(e.target.files))}
+                    disabled={addingLog}
+                    className="w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {logFiles.length > 0 && (
+                    <p className="text-xs text-gray-600 mt-1">{logFiles.length} file(s) selected</p>
+                  )}
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    type="submit"
+                    disabled={addingLog || !logMessage.trim()}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                  >
+                    {addingLog ? 'Posting...' : 'Post'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLogInput(false);
+                      setLogMessage('');
+                      setLogTitle('');
+                      setLogLocation('');
+                      setLogDistrict('');
+                      setLogUpazila('');
+                      setLogFiles([]);
+                    }}
+                    disabled={addingLog}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors disabled:bg-gray-200 text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Logs List */}
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {alert?.logs && alert.logs.length > 0 ? (
+                [...alert.logs].reverse().map((log, index) => (
+                  <div key={index} className="pb-3 border-b border-gray-200 last:border-0">
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-sm text-gray-800 whitespace-nowrap">
+                        [{log.createdBy?.policeName || 'Police'}]:
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-800">{log.title}</p>
+                        <p className="text-sm text-gray-700 mt-1">{log.description}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          📍 {log.location}, {log.upazila}, {log.district}
+                        </p>
+                        {log.media && log.media.length > 0 && (
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                            {log.media.map((item, idx) => (
+                              <img key={idx} src={item.media_url} alt="Log media" className="w-full h-16 object-cover rounded" />
+                            ))}
+                          </div>
+                        )}
+                        <span className="text-xs text-gray-500 mt-2 block">
+                          {new Date(log.timestamp).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-8">Empty</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

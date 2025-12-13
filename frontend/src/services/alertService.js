@@ -114,6 +114,32 @@ const alertService = {
       console.error('Delete media error:', error.response || error);
       throw error;
     }
+  },
+
+  // Add log to alert
+  addLog: async (id, formData) => {
+    try {
+      const response = await axios.post(`${API_URL}/${id}/logs`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Add log error:', error.response || error);
+      throw error;
+    }
+  },
+
+  // Get logs for alert
+  getLogs: async (id) => {
+    try {
+      const response = await axios.get(`${API_URL}/${id}/logs`);
+      return response.data;
+    } catch (error) {
+      console.error('Get logs error:', error.response || error);
+      throw error;
+    }
   }
 };
 
