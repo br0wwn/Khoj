@@ -41,6 +41,14 @@ const alertSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  geo: {
+    longitude: {
+      type: Number
+    },
+    latitude: {
+      type: Number
+    }
+  },
   contact_info: {
     type: String,
     default: ''

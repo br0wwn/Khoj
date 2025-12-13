@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import { useAuth } from '../context/AuthContext';
 import alertService from '../services/alertService';
 import EditAlertModal from '../components/EditAlertModal';
+
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 const AlertDetails = () => {
   const { id } = useParams();
@@ -17,6 +28,19 @@ const AlertDetails = () => {
   const [uploadingMedia, setUploadingMedia] = useState(false);
 
   useEffect(() => {
+    const fetchAlertDetails = async () => {
+      try {
+        const response = await alertService.getAlertById(id);
+        if (response.success) {
+          setAlert(response.data);
+        }
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to load alert details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchAlertDetails();
   }, [id]);
 
@@ -33,19 +57,6 @@ const AlertDetails = () => {
       });
     }
   }, [alert, user]);
-
-  const fetchAlertDetails = async () => {
-    try {
-      const response = await alertService.getAlertById(id);
-      if (response.success) {
-        setAlert(response.data);
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load alert details');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleStatusUpdate = async (newStatus) => {
     if (!window.confirm(`Are you sure you want to mark this alert as ${newStatus}?`)) {
@@ -245,6 +256,36 @@ const AlertDetails = () => {
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-2">Contact Information</h2>
               <p className="text-gray-700">{alert.contact_info}</p>
+            </div>
+          )}
+
+          {/* Location Map */}
+          {alert.geo && alert.geo.latitude && alert.geo.longitude && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Location on Map</h2>
+              <div className="h-80 rounded-lg overflow-hidden border border-gray-300">
+                <MapContainer
+                  center={[alert.geo.latitude, alert.geo.longitude]}
+                  zoom={15}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <Marker position={[alert.geo.latitude, alert.geo.longitude]}>
+                    <Popup>
+                      <div className="text-sm">
+                        <strong>{alert.title}</strong><br />
+                        {alert.location}
+                      </div>
+                    </Popup>
+                  </Marker>
+                </MapContainer>
+              </div>
+              <div className="mt-2 text-xs text-gray-600">
+                Coordinates: {alert.geo.latitude.toFixed(6)}, {alert.geo.longitude.toFixed(6)}
+              </div>
             </div>
           )}
 
