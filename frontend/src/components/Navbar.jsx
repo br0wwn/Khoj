@@ -29,7 +29,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`shadow-md ${userType === 'police' ? 'bg-police' : 'bg-citizen'}`}>
+    <nav className={`fixed top-0 left-0 right-0 shadow-md z-50 ${userType === 'police' ? 'bg-police' : 'bg-citizen'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo/Title */}
