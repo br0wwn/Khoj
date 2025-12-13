@@ -51,10 +51,6 @@ const reportSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  is_anonymous: {
-    type: Boolean,
-    default: false
-  },
   media: [reportMediaSchema],
   geo: [geoLocationSchema],
   createdBy: {
@@ -66,11 +62,6 @@ const reportSchema = new mongoose.Schema({
       type: String,
       enum: ['User', 'Police']
     }
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'under_review', 'resolved', 'rejected'],
-    default: 'pending'
   }
 }, {
   timestamps: true,
