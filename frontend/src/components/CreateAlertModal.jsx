@@ -66,7 +66,6 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
     setLoading(true);
 
     try {
-      console.log('Submitting alert with data:', formData);
       const response = await alertService.createAlert(formData);
       if (response.success) {
         let finalAlert = response.data;
