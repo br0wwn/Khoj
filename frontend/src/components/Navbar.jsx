@@ -8,13 +8,6 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // Determine colors based on user type
-  const accentColor = userType === 'police' ? 'police' : 'citizen';
-  const bgClass = `bg-${accentColor}`;
-  const textClass = `text-${accentColor}`;
-  const hoverBgClass = `hover:bg-${accentColor}/10`;
-  const hoverTextClass = `hover:text-${accentColor}`;
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {

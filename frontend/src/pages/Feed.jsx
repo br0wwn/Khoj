@@ -43,6 +43,59 @@ const Feed = () => {
 
   // Apply filters whenever alerts or filter values change
   useEffect(() => {
+    const applyFilters = () => {
+      let filtered = [...alerts];
+
+      // Status filter
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(alert => alert.status === statusFilter);
+      }
+
+      // Search by title
+      if (searchQuery.trim()) {
+        filtered = filtered.filter(alert => 
+          alert.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      // District filter
+      if (selectedDistrict !== 'all') {
+        filtered = filtered.filter(alert => alert.district === selectedDistrict);
+      }
+
+      // Upazila filter
+      if (selectedUpazila !== 'all') {
+        filtered = filtered.filter(alert => alert.upazila === selectedUpazila);
+      }
+
+      // Date filter
+      if (dateFilter !== 'all') {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        filtered = filtered.filter(alert => {
+          const alertDate = new Date(alert.createdAt);
+          
+          switch (dateFilter) {
+            case 'today':
+              return alertDate >= today;
+            case 'week':
+              const weekAgo = new Date(today);
+              weekAgo.setDate(weekAgo.getDate() - 7);
+              return alertDate >= weekAgo;
+            case 'month':
+              const monthAgo = new Date(today);
+              monthAgo.setMonth(monthAgo.getMonth() - 1);
+              return alertDate >= monthAgo;
+            default:
+              return true;
+          }
+        });
+      }
+
+      setFilteredAlerts(filtered);
+    };
+
     applyFilters();
   }, [alerts, statusFilter, searchQuery, selectedDistrict, selectedUpazila, dateFilter]);
 
@@ -60,59 +113,6 @@ const Feed = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const applyFilters = () => {
-    let filtered = [...alerts];
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(alert => alert.status === statusFilter);
-    }
-
-    // Search by title
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(alert => 
-        alert.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // District filter
-    if (selectedDistrict !== 'all') {
-      filtered = filtered.filter(alert => alert.district === selectedDistrict);
-    }
-
-    // Upazila filter
-    if (selectedUpazila !== 'all') {
-      filtered = filtered.filter(alert => alert.upazila === selectedUpazila);
-    }
-
-    // Date filter
-    if (dateFilter !== 'all') {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      filtered = filtered.filter(alert => {
-        const alertDate = new Date(alert.createdAt);
-        
-        switch (dateFilter) {
-          case 'today':
-            return alertDate >= today;
-          case 'week':
-            const weekAgo = new Date(today);
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            return alertDate >= weekAgo;
-          case 'month':
-            const monthAgo = new Date(today);
-            monthAgo.setMonth(monthAgo.getMonth() - 1);
-            return alertDate >= monthAgo;
-          default:
-            return true;
-        }
-      });
-    }
-
-    setFilteredAlerts(filtered);
   };
 
   const handleAlertCreated = (newAlert) => {
