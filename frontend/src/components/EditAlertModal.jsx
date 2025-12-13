@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import alertService from '../services/alertService';
 import areaData from '../data/area.json';
+import { useUserColors } from '../hooks/useUserColors';
 
 const EditAlertModal = ({ isOpen, onClose, alert, onAlertUpdated }) => {
+  const colors = useUserColors();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [districts] = useState([...areaData].sort((a, b) => a.district.localeCompare(b.district)));
@@ -223,7 +225,7 @@ const EditAlertModal = ({ isOpen, onClose, alert, onAlertUpdated }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+              className={`px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${colors.bg} ${colors.hoverBgLight}`}
               disabled={loading}
             >
               {loading ? 'Saving...' : 'Save Changes'}

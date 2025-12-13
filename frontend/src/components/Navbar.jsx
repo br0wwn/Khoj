@@ -3,10 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, userType, isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  // Determine colors based on user type
+  const accentColor = userType === 'police' ? 'police' : 'citizen';
+  const bgClass = `bg-${accentColor}`;
+  const textClass = `text-${accentColor}`;
+  const hoverBgClass = `hover:bg-${accentColor}/10`;
+  const hoverTextClass = `hover:text-${accentColor}`;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -29,11 +36,11 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white shadow-md">
+    <nav className={`shadow-md ${userType === 'police' ? 'bg-police' : 'bg-citizen'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo/Title */}
-          <Link to="/" className="text-2xl font-bold text-blue-600">
+          <Link to="/" className="text-2xl font-bold text-white">
             khoj
           </Link>
 
@@ -41,25 +48,25 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <Link
               to="/"
-              className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+              className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
             >
               Feed
             </Link>
             <Link
               to="/report"
-              className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+              className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
             >
               Report
             </Link>
             <Link
               to="/group"
-              className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+              className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
             >
               Group
             </Link>
             <Link
               to="/statistics"
-              className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+              className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
             >
               Statistics
             </Link>
@@ -68,14 +75,14 @@ const Navbar = () => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors focus:outline-none"
+                className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors focus:outline-none"
               >
                 Profile
               </button>
 
               {/* Dropdown Menu */}
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                <div className="absolute right-0 mt-2 w-48 bg-primary rounded-md shadow-lg py-1 z-10 border border-gray-200">
                   {isAuthenticated ? (
                     <>
                       <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">

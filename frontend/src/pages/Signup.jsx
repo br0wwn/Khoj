@@ -115,7 +115,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-primary py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -123,7 +123,7 @@ const Signup = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link to="/login" className="font-medium text-citizen hover:text-citizen-light">
               Sign in
             </Link>
           </p>
@@ -135,7 +135,7 @@ const Signup = () => {
             type="button"
             onClick={() => setUserType('citizen')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${userType === 'citizen'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-citizen text-white'
               : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
           >
@@ -145,7 +145,7 @@ const Signup = () => {
             type="button"
             onClick={() => setUserType('police')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${userType === 'police'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-police text-white'
               : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
           >
@@ -413,7 +413,11 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                userType === 'police' 
+                  ? 'bg-police hover:bg-police-light focus:ring-police' 
+                  : 'bg-citizen hover:bg-citizen-light focus:ring-citizen'
+              }`}
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>

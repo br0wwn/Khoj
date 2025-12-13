@@ -3,9 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import alertService from '../services/alertService';
 import AlertCard from '../components/AlertCard';
+import { useUserColors } from '../hooks/useUserColors';
 
 const Profile = () => {
   const { user, userType, setUser } = useAuth();
+  const colors = useUserColors();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -245,7 +247,7 @@ const Profile = () => {
             onClick={() => setActiveTab('profile')}
             className={`px-4 py-2 font-medium transition-colors border-b-2 ${
               activeTab === 'profile'
-                ? 'text-blue-600 border-blue-600'
+                ? `${colors.text} ${colors.border}`
                 : 'text-gray-600 border-transparent hover:text-gray-800'
             }`}
           >
@@ -255,7 +257,7 @@ const Profile = () => {
             onClick={() => setActiveTab('alerts')}
             className={`px-4 py-2 font-medium transition-colors border-b-2 ${
               activeTab === 'alerts'
-                ? 'text-blue-600 border-blue-600'
+                ? `${colors.text} ${colors.border}`
                 : 'text-gray-600 border-transparent hover:text-gray-800'
             }`}
           >
@@ -345,7 +347,7 @@ const Profile = () => {
             {/* Edit Profile Button */}
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className={`w-full px-4 py-2 text-white rounded-md transition-colors ${colors.bg} ${colors.hoverBgLight}`}
             >
               {isEditing ? 'Cancel Editing' : 'Edit Profile'}
             </button>
@@ -372,7 +374,7 @@ const Profile = () => {
                       <button
                         onClick={handleUploadPicture}
                         disabled={loading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+                        className={`px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 ${colors.bg} ${colors.hoverBgLight}`}
                       >
                         Upload
                       </button>

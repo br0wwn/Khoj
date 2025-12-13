@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import alertService from '../services/alertService';
 import areaData from '../data/area.json';
+import { useUserColors } from '../hooks/useUserColors';
 
 const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
+  const colors = useUserColors();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -305,7 +307,7 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+              className={`px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${colors.bg} ${colors.hoverBgLight}`}
               disabled={loading}
             >
               {loading ? 'Creating...' : 'Create Alert'}

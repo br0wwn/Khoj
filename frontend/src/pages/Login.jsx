@@ -44,7 +44,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-primary py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -52,7 +52,7 @@ const Login = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
-            <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link to="/signup" className="font-medium text-citizen hover:text-citizen-light">
               create a new account
             </Link>
           </p>
@@ -64,7 +64,7 @@ const Login = () => {
             type="button"
             onClick={() => setUserType('citizen')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${userType === 'citizen'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-citizen text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
           >
@@ -74,7 +74,7 @@ const Login = () => {
             type="button"
             onClick={() => setUserType('police')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${userType === 'police'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-police text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
           >
@@ -102,7 +102,9 @@ const Login = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className={`appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:z-10 sm:text-sm ${
+                  userType === 'police' ? 'focus:ring-police focus:border-police' : 'focus:ring-citizen focus:border-citizen'
+                }`}
                 placeholder="Email address"
               />
             </div>
@@ -119,7 +121,9 @@ const Login = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className={`appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:z-10 sm:text-sm ${
+                  userType === 'police' ? 'focus:ring-police focus:border-police' : 'focus:ring-citizen focus:border-citizen'
+                }`}
                 placeholder="Password"
               />
             </div>
@@ -129,7 +133,11 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                userType === 'police' 
+                  ? 'bg-police hover:bg-police-light focus:ring-police' 
+                  : 'bg-citizen hover:bg-citizen-light focus:ring-citizen'
+              }`}
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>

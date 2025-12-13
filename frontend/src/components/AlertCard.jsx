@@ -1,13 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useUserColors } from '../hooks/useUserColors';
 
 const AlertCard = ({ alert, variant = 'grid' }) => {
+  const colors = useUserColors();
+  
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
         return 'bg-green-100 text-green-800';
       case 'resolved':
-        return 'bg-blue-100 text-blue-800';
+        return `bg-${colors.accent}/10 text-${colors.accent}`;
       case 'archived':
         return 'bg-gray-100 text-gray-800';
       default:
@@ -50,7 +53,7 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
                 <span>{formatDate(alert.createdAt)}</span>
               </div>
             </div>
-            <span className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium inline-block">
+            <span className={`ml-4 px-4 py-2 text-white rounded-md transition-colors text-sm font-medium inline-block ${colors.bg} ${colors.hoverBgLight}`}>
               View Details
             </span>
           </div>
@@ -124,7 +127,7 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-500">{formatDate(alert.createdAt)}</span>
-            <span className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium inline-block">
+            <span className={`px-3 py-1.5 text-white rounded-md transition-colors text-sm font-medium inline-block ${colors.bg} ${colors.hoverBgLight}`}>
               View Details
             </span>
           </div>
