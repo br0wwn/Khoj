@@ -6,6 +6,7 @@ import L from 'leaflet';
 import { useAuth } from '../context/AuthContext';
 import alertService from '../services/alertService';
 import EditAlertModal from '../components/EditAlertModal';
+import areaData from '../data/area.json';
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -14,7 +15,7 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
-import areaData from '../data/area.json';
+
 
 const AlertDetails = () => {
   const { id } = useParams();
