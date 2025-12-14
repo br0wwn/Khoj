@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useUserColors } from '../hooks/useUserColors';
 import reportService from '../services/reportService';
@@ -34,26 +34,7 @@ const Report = () => {
   const [upazilas, setUpazilas] = useState([]);
   const [viewMode, setViewMode] = useState('list');
 
-  useEffect(() => {
-    fetchReports();
-  }, [user]); // Re-fetch when user changes
-
-  useEffect(() => {
-    if (selectedDistrict) {
-      const district = districts.find(d => d.district === selectedDistrict);
-      setUpazilas(district ? [...district.upazilas].sort() : []);
-      setSelectedUpazila('');
-    } else {
-      setUpazilas([]);
-      setSelectedUpazila('');
-    }
-  }, [selectedDistrict]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [feedReports, searchTerm, selectedDistrict, selectedUpazila, selectedDate, anonymousFilter]);
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
       const data = await reportService.getAllReports();
@@ -95,9 +76,9 @@ const Report = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...feedReports];
 
     // Anonymous filter
@@ -134,7 +115,26 @@ const Report = () => {
     }
 
     setFilteredReports(filtered);
-  };
+  }, [feedReports, searchTerm, selectedDistrict, selectedUpazila, selectedDate, anonymousFilter]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  useEffect(() => {
+    if (selectedDistrict) {
+      const district = districts.find(d => d.district === selectedDistrict);
+      setUpazilas(district ? [...district.upazilas].sort() : []);
+      setSelectedUpazila('');
+    } else {
+      setUpazilas([]);
+      setSelectedUpazila('');
+    }
+  }, [selectedDistrict, districts]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   const clearFilters = () => {
     setSearchTerm('');

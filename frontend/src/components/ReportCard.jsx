@@ -1,8 +1,6 @@
 import React from 'react';
-import { useUserColors } from '../hooks/useUserColors';
 
 const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, onClick }) => {
-  const colors = useUserColors();
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
