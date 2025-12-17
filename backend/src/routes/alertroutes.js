@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const alertController = require('../controllers/alerts');
-const { uploadAlertMedia } = require('../middleware/alertUpload');
+const logController = require('../controllers/logController');
+const { uploadAlertMedia, uploadLogMedia } = require('../middleware/alertUpload');
 
 // Get all alerts with optional status filter
 router.get('/', alertController.getAllAlerts);
@@ -26,5 +27,9 @@ router.delete('/:id/media/:mediaIndex', alertController.deleteAlertMedia);
 
 // Delete alert
 router.delete('/:id', alertController.deleteAlert);
+
+// Log routes
+router.post('/:id/logs', uploadLogMedia.array('media', 10), logController.addLog);
+router.get('/:id/logs', logController.getLogs);
 
 module.exports = router;
