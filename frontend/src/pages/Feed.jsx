@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUserColors } from '../hooks/useUserColors';
 import alertService from '../services/alertService';
@@ -22,12 +23,20 @@ const Feed = () => {
   const [selectedDistrict, setSelectedDistrict] = useState('all');
   const [selectedUpazila, setSelectedUpazila] = useState('all');
   const [dateFilter, setDateFilter] = useState('all'); // all, today, week, month
+  const location = useLocation();
   const [districts] = useState([...areaData].sort((a, b) => a.district.localeCompare(b.district)));
   const [upazilas, setUpazilas] = useState([]);
 
   useEffect(() => {
     fetchAlerts();
   }, []);
+
+  // Sync searchQuery with ?q= in URL (global navbar search)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q') || '';
+    setSearchQuery(q);
+  }, [location.search]);
 
   // Update upazilas when district changes
   useEffect(() => {

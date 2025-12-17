@@ -7,6 +7,7 @@ const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Determine colors based on user type
   const accentColor = userType === 'police' ? 'police' : 'citizen';
@@ -40,9 +41,33 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo/Title */}
-          <Link to="/" className="text-2xl font-bold text-white">
-            khoj
-          </Link>
+          <div className="flex-1 flex items-center space-x-4">
+            <Link to="/" className="text-2xl font-bold text-white mr-4">
+              khoj
+            </Link>
+
+            {/* Search form (global) */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
+              }}
+              className="flex-1 hidden sm:flex items-center bg-white/10 hover:bg-white/20 rounded-md px-3 py-1 mr-4"
+            >
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search alerts..."
+                className="bg-transparent text-white placeholder-white/70 focus:outline-none w-full"
+              />
+              <button type="submit" className="ml-2 text-white opacity-90 hover:opacity-100">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </form>
+          </div>
 
           {/* Navigation Buttons */}
           <div className="flex items-center space-x-4">
