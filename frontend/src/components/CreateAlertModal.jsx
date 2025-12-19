@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import alertService from '../services/alertService';
 import areaData from '../data/area.json';
 import { useUserColors } from '../hooks/useUserColors';
+
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+// Component to handle map clicks and place marker
+function LocationMarker({ position, setPosition }) {
+  useMapEvents({
+    click(e) {
+      setPosition(e.latlng);
+    },
+  });
+
+  return position === null ? null : <Marker position={position} />;
+}
 
 const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
   const colors = useUserColors();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [mapPosition, setMapPosition] = useState(null); // For map marker
   const [districts] = useState([...areaData].sort((a, b) => a.district.localeCompare(b.district)));
   const [upazilas, setUpazilas] = useState([]);
   const [formData, setFormData] = useState({
@@ -17,7 +40,8 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
     upazila: '',
     location: '',
     contact_info: '',
-    media: []
+    media: [],
+    geo: null
   });
 
   useEffect(() => {
@@ -66,10 +90,20 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
     setLoading(true);
 
     try {
-      const response = await alertService.createAlert(formData);
+      // Prepare form data with geo location if marker is placed
+      const alertData = { ...formData };
+      if (mapPosition) {
+        alertData.geo = {
+          latitude: mapPosition.lat,
+          longitude: mapPosition.lng
+        };
+      }
+
+      console.log('Submitting alert with data:', alertData);
+      const response = await alertService.createAlert(alertData);
       if (response.success) {
         let finalAlert = response.data;
-        
+
         // Upload media if files were selected
         if (selectedFiles.length > 0) {
           try {
@@ -82,7 +116,7 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
             // Continue even if media upload fails
           }
         }
-        
+
         onAlertCreated(finalAlert);
         setFormData({
           title: '',
@@ -91,9 +125,11 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
           upazila: '',
           location: '',
           contact_info: '',
-          media: []
+          media: [],
+          geo: null
         });
         setSelectedFiles([]);
+        setMapPosition(null);
         onClose();
       }
     } catch (err) {
@@ -234,6 +270,40 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Phone number or email"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Pin Location on Map (Optional)
+              </label>
+              <p className="text-xs text-gray-500 mb-2">Click on the map to place a marker</p>
+              <div className="h-64 rounded-md overflow-hidden border border-gray-300">
+                <MapContainer
+                  center={[23.8103, 90.4125]} // Dhaka, Bangladesh
+                  zoom={13}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <LocationMarker position={mapPosition} setPosition={setMapPosition} />
+                </MapContainer>
+              </div>
+              {mapPosition && (
+                <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+                  <span>
+                    Latitude: {mapPosition.lat.toFixed(6)}, Longitude: {mapPosition.lng.toFixed(6)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMapPosition(null)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>
