@@ -17,7 +17,8 @@ function App() {
       <Router>
         <div className="min-h-screen bg-primary">
           <Navbar />
-          <Routes>
+          <div className="pt-16">
+            <Routes>
             <Route path="/" element={<Feed />} />
             <Route path="/alerts/:id" element={<AlertDetails />} />
             <Route path="/report" element={<Report />} />
@@ -26,7 +27,8 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-          </Routes>
+            </Routes>
+          </div>
         </div>
       </Router>
     </AuthProvider>

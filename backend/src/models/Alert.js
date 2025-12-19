@@ -41,6 +41,14 @@ const alertSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  geo: {
+    longitude: {
+      type: Number
+    },
+    latitude: {
+      type: Number
+    }
+  },
   contact_info: {
     type: String,
     default: ''
@@ -62,7 +70,72 @@ const alertSchema = new mongoose.Schema({
       enum: ['User', 'Police']
     }
   },
-  media: [alertMediaSchema]
+  media: [alertMediaSchema],
+  logs: [{
+    title: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    description: {
+      type: String,
+      default: ''
+    },
+    location: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    district: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    upazila: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    media: [{
+      media_url: {
+        type: String,
+        required: true
+      },
+      media_type: {
+        type: String,
+        enum: ['image', 'video'],
+        default: 'image'
+      },
+      public_id: {
+        type: String
+      }
+    }],
+    geo: [{
+      latitude: {
+        type: Number,
+        required: true
+      },
+      longitude: {
+        type: Number,
+        required: true
+      }
+    }],
+    createdBy: {
+      policeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Police',
+        required: true
+      },
+      policeName: {
+        type: String,
+        required: true
+      }
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: true
 });

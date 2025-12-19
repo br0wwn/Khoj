@@ -80,7 +80,7 @@ exports.createAlert = async (req, res) => {
       });
     }
 
-    const { title, description, district, upazila, location, contact_info, media } = req.body;
+    const { title, description, district, upazila, location, contact_info, media, geo } = req.body;
     
     // Validate required fields
     if (!title || !description || !district || !upazila || !location) {
@@ -94,7 +94,7 @@ exports.createAlert = async (req, res) => {
     const userModel = req.session.userType === 'police' ? 'Police' : 'User';
     
     // Create new alert with ownership
-    const newAlert = new Alert({
+    const alertData = {
       title,
       description,
       district,
@@ -107,7 +107,17 @@ exports.createAlert = async (req, res) => {
         userType: userModel
       },
       media: media || []
-    });
+    };
+    
+    // Add geo if provided
+    if (geo && geo.longitude !== undefined && geo.latitude !== undefined) {
+      alertData.geo = {
+        longitude: geo.longitude,
+        latitude: geo.latitude
+      };
+    }
+    
+    const newAlert = new Alert(alertData);
     
     await newAlert.save();
     
@@ -196,7 +206,7 @@ exports.updateAlertDetails = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { title, description, district, upazila, location, contact_info, media } = req.body;
+    const { title, description, district, upazila, location, contact_info, media, geo } = req.body;
     
     // Find alert and check ownership
     const alert = await Alert.findOne({
@@ -219,6 +229,12 @@ exports.updateAlertDetails = async (req, res) => {
     if (location) alert.location = location;
     if (contact_info !== undefined) alert.contact_info = contact_info;
     if (media) alert.media = media;
+    if (geo && geo.longitude !== undefined && geo.latitude !== undefined) {
+      alert.geo = {
+        longitude: geo.longitude,
+        latitude: geo.latitude
+      };
+    }
     
     await alert.save();
     
