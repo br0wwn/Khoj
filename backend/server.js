@@ -7,6 +7,8 @@ const mongoose = require('mongoose');
 const connectDB = require('./src/config/database');
 const authRoutes = require('./src/routes/authRoutes');
 const policeAuthRoutes = require('./src/routes/policeAuthRoutes');
+const adminAuthRoutes = require('./src/routes/adminAuthRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
 const policeProfileRoutes = require('./src/routes/policeProfileRoutes');
 const alertRoutes = require('./src/routes/alertroutes');
@@ -52,6 +54,8 @@ app.use(session({
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/police', policeAuthRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/profile/police', policeProfileRoutes);
 app.use('/api/alerts', alertRoutes);
