@@ -6,7 +6,26 @@ const { requireAdminAuth } = require('../middleware/adminAuth');
 // GET /api/admin/dashboard
 router.get('/dashboard', requireAdminAuth, async (req, res) => {
   try {
-    // req.admin contains the authenticated admin object
+    const User = require('../models/User');
+    const Alert = require('../models/Alert');
+    const Police = require('../models/police');
+    const Report = require('../models/Report');
+
+    console.log('Fetching dashboard stats...');
+
+    // Get counts from database
+    const totalUsers = await User.countDocuments();
+    console.log('Total users:', totalUsers);
+    
+    const totalAlerts = await Alert.countDocuments();
+    console.log('Total alerts:', totalAlerts);
+    
+    const totalPolice = await Police.countDocuments();
+    console.log('Total police:', totalPolice);
+    
+    const totalReports = await Report.countDocuments();
+    console.log('Total reports:', totalReports);
+
     res.status(200).json({
       success: true,
       message: 'Admin dashboard data',
@@ -16,17 +35,18 @@ router.get('/dashboard', requireAdminAuth, async (req, res) => {
         email: req.admin.email
       },
       stats: {
-        // Add your dashboard statistics here
-        totalUsers: 0,
-        totalReports: 0,
-        totalAlerts: 0
+        totalUsers,
+        totalReports,
+        totalAlerts,
+        totalPolice
       }
     });
   } catch (error) {
     console.error('Error fetching dashboard:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching dashboard data'
+      message: 'Error fetching dashboard data',
+      error: error.message
     });
   }
 });
