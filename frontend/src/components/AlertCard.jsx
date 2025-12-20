@@ -86,46 +86,59 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
 
   // Grid view for feed page (2 columns)
   return (
-    <Link to={`/alerts/${alert._id}`} className="block">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-        {alert.media && alert.media.length > 0 && (
-          <div className="h-48 bg-gray-200 relative">
-            {alert.media[0].media_type === 'image' ? (
-              <img 
-                src={alert.media[0].media_url} 
-                alt={alert.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <svg className="w-16 h-16 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                </svg>
-              </div>
-            )}
-            {alert.media.length > 1 && (
-              <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs">
-                +{alert.media.length - 1}
-              </div>
-            )}
-          </div>
-        )}
-        <div className="p-4">
+    <Link to={`/alerts/${alert._id}`} className="block h-full">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
+        {/* Media Section - Always present with fixed height */}
+        <div className="h-48 bg-gray-200 relative flex-shrink-0">
+          {alert.media && alert.media.length > 0 ? (
+            <>
+              {alert.media[0].media_type === 'image' ? (
+                <img 
+                  src={alert.media[0].media_url} 
+                  alt={alert.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-300">
+                  <svg className="w-16 h-16 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                  </svg>
+                </div>
+              )}
+              {alert.media.length > 1 && (
+                <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs">
+                  +{alert.media.length - 1}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+              <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* Content Section - Grows to fill remaining space */}
+        <div className="p-4 flex flex-col flex-1">
           <div className="flex items-start justify-between mb-2">
             <h3 className="text-lg font-semibold text-gray-800 line-clamp-1 flex-1">{alert.title}</h3>
-            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(alert.status)}`}>
+            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusColor(alert.status)}`}>
               {alert.status}
             </span>
           </div>
           <p className="text-gray-600 text-sm mb-3 line-clamp-2">{alert.description}</p>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-          <span className="line-clamp-1">{alert.location}{alert.district && alert.upazila && ` • ${alert.upazila}, ${alert.district}`}</span>
+            <span className="line-clamp-1">{alert.location}{alert.district && alert.upazila && ` • ${alert.upazila}, ${alert.district}`}</span>
           </div>
-          <div className="flex justify-between items-center">
+          
+          {/* Footer - Pinned to bottom */}
+          <div className="flex justify-between items-center mt-auto pt-2">
             <span className="text-xs text-gray-500">{formatDate(alert.createdAt)}</span>
             <span className={`px-3 py-1.5 text-white rounded-md transition-colors text-sm font-medium inline-block ${colors.bg} ${colors.hoverBgLight}`}>
               View Details

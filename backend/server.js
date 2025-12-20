@@ -10,6 +10,7 @@ const policeAuthRoutes = require('./src/routes/policeAuthRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
 const policeProfileRoutes = require('./src/routes/policeProfileRoutes');
 const alertRoutes = require('./src/routes/alertroutes');
+const reportRoutes = require('./src/routes/reportRoutes');
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use('/api/auth/police', policeAuthRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/profile/police', policeProfileRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
