@@ -43,7 +43,7 @@ const Navbar = () => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
+                navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
               }}
               className="flex-1 hidden sm:flex items-center bg-white/10 hover:bg-white/20 rounded-md px-3 py-1 mr-4"
             >

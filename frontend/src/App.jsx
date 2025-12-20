@@ -10,6 +10,7 @@ import Profile from './pages/Profile.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import AlertDetails from './pages/AlertDetails.jsx';
+import Search from './pages/Search.jsx';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/group" element={<Group />} />
             <Route path="/statistics" element={<Statistics />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             </Routes>
