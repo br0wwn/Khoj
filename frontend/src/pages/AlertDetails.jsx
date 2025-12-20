@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useAuth } from '../context/AuthContext';
 import alertService from '../services/alertService';
+import { startConversation } from '../services/chatService';
 import EditAlertModal from '../components/EditAlertModal';
 import areaData from '../data/area.json';
 
@@ -207,6 +208,45 @@ const AlertDetails = () => {
     }
   };
 
+  const handleContactCreator = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    // If viewing own alert, redirect to chat list
+    if (isOwner) {
+      navigate('/chat');
+      return;
+    }
+
+    // Check if createdBy exists
+    if (!alert.createdBy || !alert.createdBy.userId) {
+      console.error('Alert does not have creator information');
+      return;
+    }
+
+    try {
+      const creatorId = alert.createdBy.userId._id || alert.createdBy.userId;
+      const data = await startConversation(
+        alert._id,
+        creatorId,
+        alert.createdBy.userType
+      );
+      navigate(`/chat/${data.conversation._id}`, {
+        state: {
+          conversation: {
+            _id: data.conversation._id,
+            otherUser: alert.createdBy.userId,
+            alert: { title: alert.title, _id: alert._id }
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
@@ -232,9 +272,8 @@ const AlertDetails = () => {
 
   // Check ownership - handle both populated and unpopulated userId
   const isOwner = isAuthenticated && alert && user && (
-    alert.createdBy?.userId === user.id ||
-    alert.createdBy?.userId?._id === user.id ||
-    String(alert.createdBy?.userId) === String(user.id)
+    String(alert.createdBy?.userId) === String(user.id) ||
+    String(alert.createdBy?.userId?._id) === String(user.id)
   );
 
   if (loading) {
@@ -325,6 +364,21 @@ const AlertDetails = () => {
                 </div>
               )}
 
+              {/* Message Button - For non-owners */}
+              {isAuthenticated && !isOwner && alert.status !== 'resolved' && (
+                <div className="mb-6">
+                  <button
+                    onClick={handleContactCreator}
+                    className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    Message
+                  </button>
+                </div>
+              )}
+
               {/* Location Map */}
               {alert.geo && alert.geo.latitude && alert.geo.longitude && (
                 <div className="mb-6">
@@ -398,6 +452,20 @@ const AlertDetails = () => {
               {isOwner && (
                 <div className="border-t border-gray-200 pt-6 space-y-6">
                   <h2 className="text-lg font-semibold text-gray-800">Manage Alert</h2>
+
+                  {/* Message Center Button */}
+                  <div>
+                    <h3 className="text-md font-medium text-gray-700 mb-2">Messages</h3>
+                    <button
+                      onClick={handleContactCreator}
+                      className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      View Messages
+                    </button>
+                  </div>
 
                   {/* Edit Alert Details */}
                   <div>

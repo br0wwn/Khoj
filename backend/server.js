@@ -4,6 +4,8 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const http = require('http');
+const { Server } = require('socket.io');
 const connectDB = require('./src/config/database');
 const authRoutes = require('./src/routes/authRoutes');
 const policeAuthRoutes = require('./src/routes/policeAuthRoutes');
@@ -11,8 +13,10 @@ const profileRoutes = require('./src/routes/profileRoutes');
 const policeProfileRoutes = require('./src/routes/policeProfileRoutes');
 const alertRoutes = require('./src/routes/alertroutes');
 const reportRoutes = require('./src/routes/reportRoutes');
+const chatRoutes = require('./src/routes/chatRoutes');
 
 const app = express();
+const server = http.createServer(app);
 
 // Connect to MongoDB
 connectDB();
@@ -24,6 +28,15 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Socket.IO setup with CORS
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST']
+  }
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -49,6 +62,9 @@ app.use(session({
   }
 }));
 
+// Make io available to routes
+app.set('io', io);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/police', policeAuthRoutes);
@@ -56,11 +72,79 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/profile/police', policeProfileRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/chat', chatRoutes);
+const notificationRoutes = require('./src/routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
   res.json({ message: 'Backend API is running' });
 });
+
+// Socket.IO connection handling
+const connectedUsers = new Map(); // userId -> socketId
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Authenticate and register user
+  socket.on('register', (userId) => {
+    connectedUsers.set(userId, socket.id);
+    console.log(`User ${userId} registered with socket ${socket.id}`);
+  });
+
+  // Join conversation room
+  socket.on('join-conversation', (conversationId) => {
+    socket.join(conversationId);
+    console.log(`Socket ${socket.id} joined conversation ${conversationId}`);
+  });
+
+  // Leave conversation room
+  socket.on('leave-conversation', (conversationId) => {
+    socket.leave(conversationId);
+    console.log(`Socket ${socket.id} left conversation ${conversationId}`);
+  });
+
+  // Typing indicator
+  socket.on('typing', ({ conversationId, userId }) => {
+    socket.to(conversationId).emit('user-typing', { userId });
+  });
+
+  socket.on('stop-typing', ({ conversationId, userId }) => {
+    socket.to(conversationId).emit('user-stop-typing', { userId });
+  });
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    // Remove user from connected users
+    for (const [userId, socketId] of connectedUsers.entries()) {
+      if (socketId === socket.id) {
+        connectedUsers.delete(userId);
+        console.log(`User ${userId} disconnected`);
+        break;
+      }
+    }
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+// Make connectedUsers available globally for chat controller
+global.connectedUsers = connectedUsers;
+global.io = io;
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Make connectedUsers available globally for chat controller
+global.connectedUsers = connectedUsers;
+global.io = io;
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -74,18 +158,18 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
 // Graceful shutdown - Clear all sessions when server stops
 const gracefulShutdown = async (signal) => {
   console.log(`\n${signal} received. Starting graceful shutdown...`);
-  
+
   try {
     // Clear all sessions from the database using direct MongoDB connection
     console.log('Clearing all sessions from database...');
-    
+
     const db = mongoose.connection.db;
     if (db) {
       const sessionsCollection = db.collection('sessions');
@@ -94,11 +178,11 @@ const gracefulShutdown = async (signal) => {
     } else {
       console.log('⚠ Database connection not available, skipping session cleanup.');
     }
-    
+
     // Close server
     server.close(async () => {
       console.log('✓ Server closed.');
-      
+
       // Close database connection (no callback in newer Mongoose)
       try {
         await mongoose.connection.close();
@@ -109,7 +193,7 @@ const gracefulShutdown = async (signal) => {
         process.exit(1);
       }
     });
-    
+
     // Force close after 10 seconds
     setTimeout(() => {
       console.error('⚠ Forced shutdown after timeout.');

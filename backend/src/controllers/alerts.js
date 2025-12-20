@@ -1,5 +1,9 @@
 const Alert = require('../models/Alert');
 const cloudinary = require('../config/cloudinary');
+const emailService = require('../services/emailService');
+const notificationService = require('../services/notificationService');
+const User = require('../models/User');
+const Police = require('../models/police');
 
 // @desc    Get all alerts with optional status filter
 // @route   GET /api/alerts
@@ -120,6 +124,77 @@ exports.createAlert = async (req, res) => {
     const newAlert = new Alert(alertData);
     
     await newAlert.save();
+
+    // Get io instance
+    const io = req.app.get('io');
+
+    // Send notifications asynchronously (don't block response)
+    (async () => {
+      try {
+        console.log('📧 Starting notification process for alert:', newAlert._id);
+        
+        // Create in-app notifications and get user list
+        const notificationResult = await notificationService.createAlertNotification(newAlert, req.session.userId);
+        console.log('📱 In-app notifications created:', notificationResult.count);
+        
+        if (notificationResult.success && (notificationResult.users?.length > 0 || notificationResult.police?.length > 0)) {
+          // Fetch full user details only for email recipients (limit to 50)
+          const [userDetails, policeDetails] = await Promise.all([
+            User.find({
+              _id: { $in: notificationResult.users.map(u => u._id).slice(0, 50) }
+            }).select('email name').lean(),
+            Police.find({
+              _id: { $in: notificationResult.police.map(p => p._id).slice(0, 50) }
+            }).select('email name').lean()
+          ]);
+          
+          const recipients = [...userDetails, ...policeDetails];
+          console.log(`📧 Sending emails to ${recipients.length} recipients`);
+          
+          // Send emails in batches to respect rate limits (2 per second)
+          if (recipients.length > 0) {
+            const batchSize = 2;
+            const delayMs = 1000; // 1 second between batches
+            let successCount = 0;
+            let failCount = 0;
+
+            for (let i = 0; i < recipients.length; i += batchSize) {
+              const batch = recipients.slice(i, i + batchSize);
+              
+              const batchResults = await Promise.allSettled(
+                batch.map(recipient =>
+                  emailService.sendNewAlertEmail(recipient.email, recipient.name, newAlert)
+                )
+              );
+              
+              successCount += batchResults.filter(r => r.status === 'fulfilled' && r.value?.success).length;
+              failCount += batchResults.filter(r => r.status === 'rejected' || !r.value?.success).length;
+              
+              // Wait before next batch (except for last batch)
+              if (i + batchSize < recipients.length) {
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+              }
+            }
+            
+            console.log(`📧 Email results: ${successCount} sent, ${failCount} failed`);
+          }
+        } else {
+          console.log('⚠️  No users found for notifications');
+        }
+
+        // Emit socket event for real-time notification
+        if (io) {
+          io.emit('new-notification', {
+            type: 'new_alert',
+            alertId: newAlert._id,
+            title: newAlert.title,
+            district: newAlert.district
+          });
+        }
+      } catch (error) {
+        console.error('Notification error:', error);
+      }
+    })();
     
     res.status(201).json({
       success: true,
