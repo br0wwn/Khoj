@@ -5,6 +5,7 @@ import Navbar from './components/Navbar.jsx';
 import Feed from './pages/Feed.jsx';
 import Report from './pages/Report.jsx';
 import Group from './pages/Group.jsx';
+import GroupDetail from './pages/GroupDetail.jsx';
 import Statistics from './pages/Statistics.jsx';
 import Profile from './pages/Profile.jsx';
 import Login from './pages/Login.jsx';
@@ -25,6 +26,7 @@ function App() {
             <Route path="/alerts/:id" element={<AlertDetails />} />
             <Route path="/report" element={<Report />} />
             <Route path="/group" element={<Group />} />
+            <Route path="/group/:groupId" element={<GroupDetail />} />
             <Route path="/statistics" element={<Statistics />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/search" element={<Search />} />

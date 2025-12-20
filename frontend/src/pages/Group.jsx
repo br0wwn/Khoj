@@ -44,20 +44,6 @@ const Group = () => {
     loadInvitationCount();
   };
 
-  const handleLeaveGroup = async (groupId) => {
-    if (!window.confirm('Are you sure you want to leave this group?')) return;
-    
-    try {
-      const response = await groupService.leaveGroup(groupId);
-      if (response.success) {
-        setGroups(groups.filter(g => g._id !== groupId));
-      }
-    } catch (err) {
-      console.error('Error leaving group:', err);
-      alert('Failed to leave group');
-    }
-  };
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -92,7 +78,11 @@ const Group = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {groups.map(group => (
-            <div key={group._id} className="bg-white rounded-lg shadow p-6">
+            <Link
+              key={group._id}
+              to={`/group/${group._id}`}
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer"
+            >
               <h2 className="text-xl font-semibold text-gray-800 mb-2">{group.name}</h2>
               <p className="text-gray-600 text-sm mb-3">{group.description}</p>
               <p className="text-gray-500 text-xs mb-4">
@@ -101,13 +91,10 @@ const Group = () => {
               <p className="text-gray-600 text-sm mb-4">
                 Members: {group.members.filter(m => m.status === 'accepted').length}
               </p>
-              <button
-                onClick={() => handleLeaveGroup(group._id)}
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Leave Group
-              </button>
-            </div>
+              <div className="text-blue-600 text-sm font-medium hover:underline">
+                View Chat →
+              </div>
+            </Link>
           ))}
         </div>
       )}

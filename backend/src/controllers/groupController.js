@@ -78,18 +78,24 @@ exports.acceptInvitation = async (req, res) => {
     if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
 
     // Find member
-    const memberIdx = group.members.findIndex(m => m.userId.toString() === userId);
+    const memberIdx = group.members.findIndex(m => m.userId.toString() === userId.toString());
     if (memberIdx === -1) return res.status(400).json({ success: false, message: 'Not invited to this group' });
+
+    // Check if already accepted
+    if (group.members[memberIdx].status === 'accepted') {
+      return res.json({ success: true, message: 'Already accepted', data: group });
+    }
 
     // Update member status
     group.members[memberIdx].status = 'accepted';
     await group.save();
 
-    // Update notification status
-    await Notification.updateOne(
-      { groupId, recipient: userId, type: 'group_invitation' },
-      { status: 'actioned' }
-    );
+    // Update notification status to mark as actioned
+    await Notification.deleteOne({
+      groupId: groupId,
+      recipient: userId,
+      type: 'group_invitation'
+    });
 
     res.json({ success: true, message: 'Invitation accepted', data: group });
   } catch (error) {
@@ -108,17 +114,18 @@ exports.rejectInvitation = async (req, res) => {
     if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
 
     // Find and remove member
-    const memberIdx = group.members.findIndex(m => m.userId.toString() === userId);
+    const memberIdx = group.members.findIndex(m => m.userId.toString() === userId.toString());
     if (memberIdx === -1) return res.status(400).json({ success: false, message: 'Not invited to this group' });
 
     group.members.splice(memberIdx, 1);
     await group.save();
 
-    // Update notification status
-    await Notification.updateOne(
-      { groupId, recipient: userId, type: 'group_invitation' },
-      { status: 'actioned' }
-    );
+    // Delete notification for this invitation
+    await Notification.deleteOne({
+      groupId: groupId,
+      recipient: userId,
+      type: 'group_invitation'
+    });
 
     res.json({ success: true, message: 'Invitation rejected' });
   } catch (error) {
@@ -132,9 +139,9 @@ exports.getUserInvitations = async (req, res) => {
   try {
     const userId = req.session.userId;
 
-    // Find all groups where user is invited (status = 'invited')
+    // Find all groups where user has a member entry with status 'invited'
     const groups = await Group.find(
-      { 'members.userId': userId, 'members.status': 'invited' }
+      { members: { $elemMatch: { userId: userId, status: 'invited' } } }
     ).populate('createdBy', 'name email').lean();
 
     res.json({ success: true, data: groups });
@@ -149,9 +156,9 @@ exports.getUserGroups = async (req, res) => {
   try {
     const userId = req.session.userId;
 
-    // Find all groups where user is accepted member
+    // Find all groups where user has a member entry with status 'accepted'
     const groups = await Group.find(
-      { 'members.userId': userId, 'members.status': 'accepted' }
+      { members: { $elemMatch: { userId: userId, status: 'accepted' } } }
     ).populate('createdBy', 'name email').lean();
 
     res.json({ success: true, data: groups });
