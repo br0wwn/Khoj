@@ -7,7 +7,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalUsers: 0,
-    totalReports: 0,
+    pendingReports: 0,
     totalAlerts: 0,
     totalPolice: 0
   });
@@ -73,8 +73,8 @@ const AdminDashboard = () => {
             />
             <StatCard
               icon="📋"
-              title="Total Reports"
-              value={stats.totalReports}
+              title="Pending Reports"
+              value={stats.pendingReports}
               color="text-green-600"
             />
             <StatCard

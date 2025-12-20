@@ -8,6 +8,7 @@ import Report from './pages/Report.jsx';
 import Group from './pages/Group.jsx';
 import Statistics from './pages/Statistics.jsx';
 import Profile from './pages/Profile.jsx';
+import UserProfile from './pages/UserProfile.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import AlertDetails from './pages/AlertDetails.jsx';
@@ -106,6 +107,7 @@ function App() {
                     <Route path="/group" element={<Group />} />
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/profile" element={<Profile />} />
+                    <Route path="/profile/:type/:id" element={<UserProfile />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                   </Routes>

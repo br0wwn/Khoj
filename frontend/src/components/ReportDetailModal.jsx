@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useUserColors } from '../hooks/useUserColors';
 import EditReportModal from './EditReportModal';
+import ReportButton from './ReportButton';
 
 const ReportDetailModal = ({ report, isOpen, onClose, onReportUpdated, onReportDeleted }) => {
   const { user } = useAuth();
@@ -44,14 +45,19 @@ const ReportDetailModal = ({ report, isOpen, onClose, onReportUpdated, onReportD
           {/* Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-800">Report Details</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-3">
+              {!isOwner() && (
+                <ReportButton reportid={report._id} reportModel="Report" />
+              )}
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Content */}
@@ -132,9 +138,7 @@ const ReportDetailModal = ({ report, isOpen, onClose, onReportUpdated, onReportD
                 <div className="bg-gray-50 rounded-lg p-4">
                   {user ? (
                     <a
-                      href={`/profile/${report.createdBy.userId._id || report.createdBy.userId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/profile/${report.createdBy.userType === 'police' ? 'police' : 'user'}/${report.createdBy.userId._id || report.createdBy.userId}`}
                       className={`${colors.text} font-medium hover:underline block`}
                     >
                       {report.createdBy.userId?.name || 'Unknown'}

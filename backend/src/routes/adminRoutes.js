@@ -9,7 +9,7 @@ router.get('/dashboard', requireAdminAuth, async (req, res) => {
     const User = require('../models/User');
     const Alert = require('../models/Alert');
     const Police = require('../models/police');
-    const Report = require('../models/Report');
+    const ReportToAdmin = require('../models/ReportToAdmin');
 
     console.log('Fetching dashboard stats...');
 
@@ -23,8 +23,8 @@ router.get('/dashboard', requireAdminAuth, async (req, res) => {
     const totalPolice = await Police.countDocuments();
     console.log('Total police:', totalPolice);
     
-    const totalReports = await Report.countDocuments();
-    console.log('Total reports:', totalReports);
+    const pendingReports = await ReportToAdmin.countDocuments({ status: 'pending' });
+    console.log('Pending reports:', pendingReports);
 
     res.status(200).json({
       success: true,
@@ -36,7 +36,7 @@ router.get('/dashboard', requireAdminAuth, async (req, res) => {
       },
       stats: {
         totalUsers,
-        totalReports,
+        pendingReports,
         totalAlerts,
         totalPolice
       }

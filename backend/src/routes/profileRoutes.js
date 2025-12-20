@@ -7,6 +7,9 @@ const { requireAuth } = require('../middleware/auth');
 // All routes require authentication
 router.use(requireAuth);
 
+// Get user profile by ID (public for logged-in users)
+router.get('/user/:id', profileController.getUserProfileById);
+
 // Update profile (name, bio, dateOfBirth)
 router.put('/update', profileController.updateProfile);
 
