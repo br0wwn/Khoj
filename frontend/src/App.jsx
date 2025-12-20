@@ -11,6 +11,7 @@ import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import AlertDetails from './pages/AlertDetails.jsx';
 import Search from './pages/Search.jsx';
+import GroupInvitations from './pages/GroupInvitations.jsx';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/statistics" element={<Statistics />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/group-invitations" element={<GroupInvitations />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             </Routes>
