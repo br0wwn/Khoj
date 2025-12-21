@@ -249,11 +249,7 @@ lost-and-found-simple-implementation/
 
 This project is licensed under the MIT License.
 
-## 👥 Authors
-
-- **Dipto22299520** - [GitHub](https://github.com/Dipto22299520)
-
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - React community for excellent documentation
 - MongoDB for robust database solutions
