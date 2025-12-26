@@ -1,63 +1,55 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
-  recipient: {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      refPath: 'recipient.userType'
+    recipient: {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true,
+            refPath: 'recipient.userType'
+        },
+        userType: {
+            type: String,
+            required: true,
+            enum: ['User', 'Police']
+        }
     },
-    userType: {
-      type: String,
-      required: true,
-      enum: ['User', 'Police']
+    type: {
+        type: String,
+        required: true,
+        enum: ['new_alert', 'alert_update', 'message', 'report']
+    },
+    title: {
+        type: String,
+        required: true
+    },
+    message: {
+        type: String,
+        required: true
+    },
+    relatedAlert: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Alert'
+    },
+    relatedConversation: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Conversation'
+    },
+    isRead: {
+        type: Boolean,
+        default: false
+    },
+    readAt: {
+        type: Date
     }
-  },
-  type: {
-    type: String,
-    enum: ['facial_recognition', 'alert_update', 'report_update', 'general'],
-    required: true
-  },
-  title: {
-    type: String,
-    required: true
-  },
-  message: {
-    type: String,
-    required: true
-  },
-  relatedAlert: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Alert'
-  },
-  relatedReport: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Report'
-  },
-  matchData: {
-    confidence: {
-      type: Number,
-      min: 0,
-      max: 100
-    },
-    matchedImageUrl: String,
-    location: String,
-    timestamp: Date
-  },
-  isRead: {
-    type: Boolean,
-    default: false
-  },
-  priority: {
-    type: String,
-    enum: ['low', 'medium', 'high', 'urgent'],
-    default: 'medium'
-  }
 }, {
-  timestamps: true
+    collection: 'notifications',
+    timestamps: true
 });
 
-// Index for faster queries
+// Indexes
 notificationSchema.index({ 'recipient.userId': 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('Notification', notificationSchema);
+const Notification = mongoose.model('Notification', notificationSchema);
+
+module.exports = Notification;

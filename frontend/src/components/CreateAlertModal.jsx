@@ -98,12 +98,12 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
           longitude: mapPosition.lng
         };
       }
-      
+
       console.log('Submitting alert with data:', alertData);
       const response = await alertService.createAlert(alertData);
       if (response.success) {
         let finalAlert = response.data;
-        
+
         // Upload media if files were selected
         if (selectedFiles.length > 0) {
           try {
@@ -116,7 +116,7 @@ const CreateAlertModal = ({ isOpen, onClose, onAlertCreated }) => {
             // Continue even if media upload fails
           }
         }
-        
+
         onAlertCreated(finalAlert);
         setFormData({
           title: '',

@@ -21,4 +21,11 @@ router.post('/upload-picture', upload.single('profilePicture'), profileControlle
 
 // Delete profile picture
 router.delete('/delete-picture', profileController.deleteProfilePicture);
+
+// Toggle email notifications
+router.put('/email-notifications', profileController.toggleEmailNotifications);
+
+// Toggle in-app notifications
+router.put('/inapp-notifications', profileController.toggleInAppNotifications);
+
 module.exports = router;

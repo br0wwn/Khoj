@@ -1,11 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useUserColors } from '../hooks/useUserColors';
+import { useAuth } from '../context/AuthContext';
+import { startConversation } from '../services/chatService';
 import ReportButton from './ReportButton';
 
-const AlertCard = ({ alert, variant = 'grid' }) => {
+const AlertCard = ({ alert, variant = 'grid', showContactButton = false }) => {
   const colors = useUserColors();
-  
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
@@ -29,6 +33,56 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
     });
   };
 
+  const handleContactCreator = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log('Message button clicked');
+    console.log('Alert data:', alert);
+    console.log('User data:', user);
+
+    if (!user) {
+      console.log('No user logged in, redirecting to login');
+      navigate('/login');
+      return;
+    }
+
+    // Check if createdBy exists
+    if (!alert.createdBy || !alert.createdBy.userId) {
+      console.error('Alert does not have creator information:', alert);
+      return;
+    }
+
+    // If user clicks message on their own alert, redirect to chat list
+    const creatorId = alert.createdBy.userId?._id || alert.createdBy.userId;
+    if (String(creatorId) === String(user.id)) {
+      console.log('Redirecting to chat list (own alert)');
+      navigate('/chat');
+      return;
+    }
+
+    console.log('Starting conversation...');
+    try {
+      const data = await startConversation(
+        alert._id,
+        alert.createdBy.userId,
+        alert.createdBy.userType
+      );
+      console.log('Conversation created:', data);
+      navigate(`/chat/${data.conversation._id}`, {
+        state: {
+          conversation: {
+            _id: data.conversation._id,
+            otherUser: alert.createdBy,
+            alert: { title: alert.title, _id: alert._id }
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+    }
+  };
+
   if (variant === 'list') {
     // List view for profile page (1 per row)
     return (
@@ -50,7 +104,7 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                {alert.location}{alert.district && alert.upazila && ` • ${alert.upazila}, ${alert.district}`}
+                  {alert.location}{alert.district && alert.upazila && ` • ${alert.upazila}, ${alert.district}`}
                 </span>
                 <span>{formatDate(alert.createdAt)}</span>
               </div>
@@ -100,8 +154,8 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
           {alert.media && alert.media.length > 0 ? (
             <>
               {alert.media[0].media_type === 'image' ? (
-                <img 
-                  src={alert.media[0].media_url} 
+                <img
+                  src={alert.media[0].media_url}
                   alt={alert.title}
                   className="w-full h-full object-cover"
                 />
@@ -143,13 +197,28 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
             </svg>
             <span className="line-clamp-1">{alert.location}{alert.district && alert.upazila && ` • ${alert.upazila}, ${alert.district}`}</span>
           </div>
-          
+
           {/* Footer - Pinned to bottom */}
           <div className="flex justify-between items-center mt-auto pt-2">
             <span className="text-xs text-gray-500">{formatDate(alert.createdAt)}</span>
-            <span className={`px-3 py-1.5 text-white rounded-md transition-colors text-sm font-medium inline-block ${colors.bg} ${colors.hoverBgLight}`}>
-              View Details
-            </span>
+            <div className="flex gap-2">
+              {showContactButton && user && (
+                <button
+                  onClick={alert.status === 'resolved' ? null : handleContactCreator}
+                  disabled={alert.status === 'resolved'}
+                  className={`px-3 py-1.5 rounded-md transition-colors text-sm font-medium ${alert.status === 'resolved'
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                    }`}
+                  title={alert.status === 'resolved' ? 'This alert has been resolved' : 'Send a message'}
+                >
+                  Message
+                </button>
+              )}
+              <span className={`px-3 py-1.5 text-white rounded-md transition-colors text-sm font-medium inline-block ${colors.bg} ${colors.hoverBgLight}`}>
+                View Details
+              </span>
+            </div>
           </div>
         </div>
       </div>

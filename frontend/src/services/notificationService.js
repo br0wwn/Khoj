@@ -1,75 +1,49 @@
 import axios from 'axios';
 
-const API_URL = '/api/notifications';
+const API_URL = 'http://localhost:5001/api/notifications';
 
-axios.defaults.withCredentials = true;
+const axiosInstance = axios.create({
+    withCredentials: true
+});
 
-const notificationService = {
-  // Get all notifications
-  getNotifications: async (params = {}) => {
+// Get user notifications
+export const getNotifications = async (page = 1, limit = 20) => {
     try {
-      const response = await axios.get(API_URL, { params });
-      return response.data;
+        const response = await axiosInstance.get(`${API_URL}`, {
+            params: { page, limit }
+        });
+        return response.data;
     } catch (error) {
-      console.error('Get notifications error:', error.response || error);
-      throw error;
+        throw error.response?.data || error.message;
     }
-  },
-
-  // Get unread count
-  getUnreadCount: async () => {
-    try {
-      const response = await axios.get(`${API_URL}/unread-count`);
-      return response.data;
-    } catch (error) {
-      console.error('Get unread count error:', error.response || error);
-      throw error;
-    }
-  },
-
-  // Mark notification as read
-  markAsRead: async (id) => {
-    try {
-      const response = await axios.put(`${API_URL}/${id}/read`);
-      return response.data;
-    } catch (error) {
-      console.error('Mark as read error:', error.response || error);
-      throw error;
-    }
-  },
-
-  // Mark all as read
-  markAllAsRead: async () => {
-    try {
-      const response = await axios.put(`${API_URL}/read-all`);
-      return response.data;
-    } catch (error) {
-      console.error('Mark all as read error:', error.response || error);
-      throw error;
-    }
-  },
-
-  // Delete notification
-  deleteNotification: async (id) => {
-    try {
-      const response = await axios.delete(`${API_URL}/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Delete notification error:', error.response || error);
-      throw error;
-    }
-  },
-
-  // Create facial recognition notification
-  createFacialRecognitionNotification: async (data) => {
-    try {
-      const response = await axios.post(`${API_URL}/facial-recognition`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Create facial recognition notification error:', error.response || error);
-      throw error;
-    }
-  }
 };
 
-export default notificationService;
+// Get unread count
+export const getUnreadCount = async () => {
+    try {
+        const response = await axiosInstance.get(`${API_URL}/unread-count`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Mark notification as read
+export const markAsRead = async (notificationId) => {
+    try {
+        const response = await axiosInstance.put(`${API_URL}/${notificationId}/read`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Mark all notifications as read
+export const markAllAsRead = async () => {
+    try {
+        const response = await axiosInstance.put(`${API_URL}/read-all`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};

@@ -69,11 +69,11 @@ const reportSchema = new mongoose.Schema({
 });
 
 // Virtual for created_at and updated_at
-reportSchema.virtual('created_at').get(function() {
+reportSchema.virtual('created_at').get(function () {
   return this.createdAt;
 });
 
-reportSchema.virtual('updated_at').get(function() {
+reportSchema.virtual('updated_at').get(function () {
   return this.updatedAt;
 });
 

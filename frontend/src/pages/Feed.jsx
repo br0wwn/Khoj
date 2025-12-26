@@ -15,7 +15,7 @@ const Feed = () => {
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Filters
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,7 +53,7 @@ const Feed = () => {
 
       // Search by title
       if (searchQuery.trim()) {
-        filtered = filtered.filter(alert => 
+        filtered = filtered.filter(alert =>
           alert.title.toLowerCase().includes(searchQuery.toLowerCase())
         );
       }
@@ -72,10 +72,10 @@ const Feed = () => {
       if (dateFilter !== 'all') {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
+
         filtered = filtered.filter(alert => {
           const alertDate = new Date(alert.createdAt);
-          
+
           switch (dateFilter) {
             case 'today':
               return alertDate >= today;
@@ -93,11 +93,23 @@ const Feed = () => {
         });
       }
 
+      // Sort: User's own alerts first, then by date
+      filtered.sort((a, b) => {
+        const aIsOwn = user && a.createdBy?.userId === user.id;
+        const bIsOwn = user && b.createdBy?.userId === user.id;
+        
+        if (aIsOwn && !bIsOwn) return -1;
+        if (!aIsOwn && bIsOwn) return 1;
+        
+        // If both are own or both are not own, sort by date (newest first)
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+
       setFilteredAlerts(filtered);
     };
 
     applyFilters();
-  }, [alerts, statusFilter, searchQuery, selectedDistrict, selectedUpazila, dateFilter]);
+  }, [alerts, statusFilter, searchQuery, selectedDistrict, selectedUpazila, dateFilter, user]);
 
   const fetchAlerts = async () => {
     setLoading(true);
@@ -127,7 +139,7 @@ const Feed = () => {
     setDateFilter('all');
   };
 
-  const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() !== '' || 
+  const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() !== '' ||
     selectedDistrict !== 'all' || selectedUpazila !== 'all' || dateFilter !== 'all';
 
   return (
@@ -158,31 +170,28 @@ const Feed = () => {
           {/* Status filter buttons */}
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              statusFilter === 'all'
+            className={`px-4 py-2 rounded-md transition-colors ${statusFilter === 'all'
                 ? `${colors.bg} text-white`
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             All
           </button>
           <button
             onClick={() => setStatusFilter('active')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              statusFilter === 'active'
+            className={`px-4 py-2 rounded-md transition-colors ${statusFilter === 'active'
                 ? 'bg-green-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             Active
           </button>
           <button
             onClick={() => setStatusFilter('resolved')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              statusFilter === 'resolved'
+            className={`px-4 py-2 rounded-md transition-colors ${statusFilter === 'resolved'
                 ? `${colors.bg} text-white`
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             Resolved
           </button>
@@ -225,7 +234,7 @@ const Feed = () => {
       {showFilters && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Advanced Filters</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search by title */}
             <div>
@@ -318,10 +327,10 @@ const Feed = () => {
             {hasActiveFilters ? 'No alerts match your filters' : 'No alerts yet'}
           </h2>
           <p className="text-gray-600 mb-4">
-            {hasActiveFilters 
+            {hasActiveFilters
               ? 'Try adjusting your filter criteria to see more results.'
-              : isAuthenticated 
-                ? 'Be the first to create an alert in your community!' 
+              : isAuthenticated
+                ? 'Be the first to create an alert in your community!'
                 : 'Sign in to view and create community alerts.'}
           </p>
           {hasActiveFilters && (
@@ -344,7 +353,7 @@ const Feed = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
           {filteredAlerts.map((alert) => (
-            <AlertCard key={alert._id} alert={alert} variant="grid" />
+            <AlertCard key={alert._id} alert={alert} variant="grid" showContactButton={true} />
           ))}
         </div>
       )}

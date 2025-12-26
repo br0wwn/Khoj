@@ -22,4 +22,10 @@ router.post('/upload-picture', upload.single('profilePicture'), policeProfileCon
 // Delete profile picture
 router.delete('/delete-picture', policeProfileController.deleteProfilePicture);
 
+// Toggle email notifications
+router.put('/email-notifications', policeProfileController.toggleEmailNotifications);
+
+// Toggle in-app notifications
+router.put('/inapp-notifications', policeProfileController.toggleInAppNotifications);
+
 module.exports = router;

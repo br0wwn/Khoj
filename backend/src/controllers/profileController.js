@@ -71,6 +71,7 @@ exports.updateProfile = async (req, res) => {
         dateOfBirth: user.dateOfBirth,
         bio: user.bio,
         profilePicture: user.profilePicture,
+        emailNotifications: user.emailNotifications,
         createdAt: user.createdAt
       }
     });
@@ -234,6 +235,86 @@ exports.deleteProfilePicture = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting profile picture'
+    });
+  }
+};
+
+// @desc    Toggle email notifications
+// @route   PUT /api/profile/email-notifications
+// @access  Private
+exports.toggleEmailNotifications = async (req, res) => {
+  try {
+    const { emailNotifications } = req.body;
+    const userId = req.session.userId;
+
+    if (typeof emailNotifications !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'emailNotifications must be a boolean value'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.emailNotifications = emailNotifications;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Email notifications ${emailNotifications ? 'enabled' : 'disabled'} successfully`,
+      emailNotifications: user.emailNotifications
+    });
+  } catch (error) {
+    console.error('Toggle email notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating email notification settings'
+    });
+  }
+};
+
+// @desc    Toggle in-app notifications
+// @route   PUT /api/profile/inapp-notifications
+// @access  Private
+exports.toggleInAppNotifications = async (req, res) => {
+  try {
+    const { inAppNotifications } = req.body;
+    const userId = req.session.userId;
+
+    if (typeof inAppNotifications !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'inAppNotifications must be a boolean value'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.inAppNotifications = inAppNotifications;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `In-app notifications ${inAppNotifications ? 'enabled' : 'disabled'} successfully`,
+      inAppNotifications: user.inAppNotifications
+    });
+  } catch (error) {
+    console.error('Toggle in-app notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating in-app notification settings'
     });
   }
 };

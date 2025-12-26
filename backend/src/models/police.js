@@ -99,6 +99,14 @@ const policeSchema = new mongoose.Schema({
             default: null
         }
     },
+    emailNotifications: {
+        type: Boolean,
+        default: true
+    },
+    inAppNotifications: {
+        type: Boolean,
+        default: true
+    },
     createdAt: {
         type: Date,
         default: Date.now
