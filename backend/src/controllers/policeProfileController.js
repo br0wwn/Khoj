@@ -47,6 +47,7 @@ exports.updateProfile = async (req, res) => {
                 dateOfBirth: police.dateOfBirth,
                 joiningDate: police.joiningDate,
                 profilePicture: police.profilePicture,
+                emailNotifications: police.emailNotifications,
                 createdAt: police.createdAt
             }
         });
@@ -210,6 +211,86 @@ exports.deleteProfilePicture = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error deleting profile picture'
+        });
+    }
+};
+
+// @desc    Toggle email notifications for police
+// @route   PUT /api/profile/police/email-notifications
+// @access  Private
+exports.toggleEmailNotifications = async (req, res) => {
+    try {
+        const { emailNotifications } = req.body;
+        const policeId = req.session.userId;
+
+        if (typeof emailNotifications !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: 'emailNotifications must be a boolean value'
+            });
+        }
+
+        const police = await Police.findById(policeId);
+        if (!police) {
+            return res.status(404).json({
+                success: false,
+                message: 'Police officer not found'
+            });
+        }
+
+        police.emailNotifications = emailNotifications;
+        await police.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Email notifications ${emailNotifications ? 'enabled' : 'disabled'} successfully`,
+            emailNotifications: police.emailNotifications
+        });
+    } catch (error) {
+        console.error('Toggle email notifications error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating email notification settings'
+        });
+    }
+};
+
+// @desc    Toggle in-app notifications for police
+// @route   PUT /api/profile/police/inapp-notifications
+// @access  Private
+exports.toggleInAppNotifications = async (req, res) => {
+    try {
+        const { inAppNotifications } = req.body;
+        const policeId = req.session.userId;
+
+        if (typeof inAppNotifications !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: 'inAppNotifications must be a boolean value'
+            });
+        }
+
+        const police = await Police.findById(policeId);
+        if (!police) {
+            return res.status(404).json({
+                success: false,
+                message: 'Police officer not found'
+            });
+        }
+
+        police.inAppNotifications = inAppNotifications;
+        await police.save();
+
+        res.status(200).json({
+            success: true,
+            message: `In-app notifications ${inAppNotifications ? 'enabled' : 'disabled'} successfully`,
+            inAppNotifications: police.inAppNotifications
+        });
+    } catch (error) {
+        console.error('Toggle in-app notifications error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating in-app notification settings'
         });
     }
 };

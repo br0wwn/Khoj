@@ -4,10 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import { getUnreadCount } from '../services/chatService';
 import { getUnreadCount as getNotificationUnreadCount } from '../services/notificationService';
 import { useSocket } from '../context/SocketContext';
+import SettingsModal from './SettingsModal';
+import axios from 'axios';
 
 const Navbar = () => {
-  const { user, userType, isAuthenticated, logout } = useAuth();
+  const { user, userType, isAuthenticated, logout, setUser } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(user?.emailNotifications ?? true);
+  const [inAppNotifications, setInAppNotifications] = useState(user?.inAppNotifications ?? true);
+  const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
@@ -31,13 +37,15 @@ const Navbar = () => {
     if (isAuthenticated) {
       loadUnreadCount();
       loadNotificationUnreadCount();
+      setEmailNotifications(user?.emailNotifications ?? true);
+      setInAppNotifications(user?.inAppNotifications ?? true);
     } else {
       // Reset counts when logged out
       setUnreadCount(0);
       setNotificationUnreadCount(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.emailNotifications, user?.inAppNotifications]);
 
   // Listen for new message notifications
   useEffect(() => {
@@ -87,6 +95,54 @@ const Navbar = () => {
     if (result.success) {
       setDropdownOpen(false);
       navigate('/login');
+    }
+  };
+
+  const handleToggleEmailNotifications = async () => {
+    setLoading(true);
+
+    try {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/email-notifications'
+        : '/api/profile/email-notifications';
+
+      const response = await axios.put(endpoint,
+        { emailNotifications: !emailNotifications },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setEmailNotifications(!emailNotifications);
+        setUser({ ...user, emailNotifications: !emailNotifications });
+      }
+    } catch (error) {
+      console.error('Failed to update email notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleInAppNotifications = async () => {
+    setLoading(true);
+
+    try {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/inapp-notifications'
+        : '/api/profile/inapp-notifications';
+
+      const response = await axios.put(endpoint,
+        { inAppNotifications: !inAppNotifications },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setInAppNotifications(!inAppNotifications);
+        setUser({ ...user, inAppNotifications: !inAppNotifications });
+      }
+    } catch (error) {
+      console.error('Failed to update in-app notifications:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -209,13 +265,15 @@ const Navbar = () => {
                       >
                         My Profile
                       </Link>
-                      <Link
-                        to="/settings"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setDropdownOpen(false)}
+                      <button
+                        onClick={() => {
+                          setShowSettingsModal(true);
+                          setDropdownOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         Settings
-                      </Link>
+                      </button>
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
@@ -238,6 +296,17 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        emailNotifications={emailNotifications}
+        inAppNotifications={inAppNotifications}
+        onToggleEmail={handleToggleEmailNotifications}
+        onToggleInApp={handleToggleInAppNotifications}
+        loading={loading}
+      />
     </nav>
   );
 };

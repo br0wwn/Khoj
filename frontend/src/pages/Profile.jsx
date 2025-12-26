@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import alertService from '../services/alertService';
 import AlertCard from '../components/AlertCard';
+import SettingsModal from '../components/SettingsModal';
 import { useUserColors } from '../hooks/useUserColors';
 
 const Profile = () => {
@@ -15,6 +16,9 @@ const Profile = () => {
   const [myAlerts, setMyAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'alerts'
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(user?.emailNotifications ?? true);
+  const [inAppNotifications, setInAppNotifications] = useState(user?.inAppNotifications ?? true);
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -43,7 +47,9 @@ const Profile = () => {
     if (!selectedImage) {
       setImagePreview(user?.profilePicture?.url || null);
     }
-  }, [user?.profilePicture?.url, selectedImage]);
+    setEmailNotifications(user?.emailNotifications ?? true);
+    setInAppNotifications(user?.inAppNotifications ?? true);
+  }, [user?.profilePicture?.url, selectedImage, user?.emailNotifications, user?.inAppNotifications]);
 
   const handleChange = (e) => {
     setFormData({
@@ -215,6 +221,70 @@ const Profile = () => {
     }
   };
 
+  const handleToggleEmailNotifications = async () => {
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/email-notifications'
+        : '/api/profile/email-notifications';
+
+      const response = await axios.put(endpoint,
+        { emailNotifications: !emailNotifications },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setEmailNotifications(!emailNotifications);
+        setUser({ ...user, emailNotifications: !emailNotifications });
+        setMessage({
+          type: 'success',
+          text: `Email notifications ${!emailNotifications ? 'enabled' : 'disabled'} successfully!`
+        });
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to update email notification settings'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleInAppNotifications = async () => {
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/inapp-notifications'
+        : '/api/profile/inapp-notifications';
+
+      const response = await axios.put(endpoint,
+        { inAppNotifications: !inAppNotifications },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setInAppNotifications(!inAppNotifications);
+        setUser({ ...user, inAppNotifications: !inAppNotifications });
+        setMessage({
+          type: 'success',
+          text: `In-app notifications ${!inAppNotifications ? 'enabled' : 'disabled'} successfully!`
+        });
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to update in-app notification settings'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch user's alerts
   useEffect(() => {
     if (activeTab === 'alerts') {
@@ -238,28 +308,39 @@ const Profile = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">My Profile</h1>
+      {/* Header with Settings Button */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
+        <button
+          onClick={() => setShowSettingsModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors shadow-sm"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="font-medium">Settings</span>
+        </button>
+      </div>
 
       {/* Tab Navigation */}
       <div className="mb-6 border-b border-gray-200">
         <div className="flex gap-4">
           <button
             onClick={() => setActiveTab('profile')}
-            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-              activeTab === 'profile'
-                ? `${colors.text} ${colors.border}`
-                : 'text-gray-600 border-transparent hover:text-gray-800'
-            }`}
+            className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'profile'
+              ? `${colors.text} ${colors.border}`
+              : 'text-gray-600 border-transparent hover:text-gray-800'
+              }`}
           >
             Profile Information
           </button>
           <button
             onClick={() => setActiveTab('alerts')}
-            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-              activeTab === 'alerts'
-                ? `${colors.text} ${colors.border}`
-                : 'text-gray-600 border-transparent hover:text-gray-800'
-            }`}
+            className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'alerts'
+              ? `${colors.text} ${colors.border}`
+              : 'text-gray-600 border-transparent hover:text-gray-800'
+              }`}
           >
             My Alerts ({myAlerts.length})
           </button>
@@ -274,316 +355,316 @@ const Profile = () => {
 
       {/* Profile Information Tab */}
       {activeTab === 'profile' && (
-      <div className="flex gap-6">
-        {/* Left Sidebar - Profile Information */}
-        <div className="w-80 flex-shrink-0">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-            {/* Profile Picture */}
-            <div className="flex flex-col items-center mb-6">
-              <img
-                src={imagePreview || 'https://via.placeholder.com/150'}
-                alt="Profile"
-                className="w-32 h-32 rounded-full object-cover border-4 border-gray-200 mb-4"
-              />
-              <h2 className="text-xl font-semibold text-gray-800">{user?.name}</h2>
-              <p className="text-gray-600 text-sm">{user?.email}</p>
-            </div>
-
-            {/* Profile Information */}
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
-                <p className="mt-1 text-gray-900">
-                  {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'Not set'}
-                </p>
+        <div className="flex gap-6">
+          {/* Left Sidebar - Profile Information */}
+          <div className="w-80 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
+              {/* Profile Picture */}
+              <div className="flex flex-col items-center mb-6">
+                <img
+                  src={imagePreview || 'https://via.placeholder.com/150'}
+                  alt="Profile"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-gray-200 mb-4"
+                />
+                <h2 className="text-xl font-semibold text-gray-800">{user?.name}</h2>
+                <p className="text-gray-600 text-sm">{user?.email}</p>
               </div>
 
-              {/* Conditional display based on user type */}
-              {userType === 'police' ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Police ID</label>
-                    <p className="mt-1 text-gray-900">{user?.policeId || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Badge Number</label>
-                    <p className="mt-1 text-gray-900">{user?.badgeNumber || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Rank</label>
-                    <p className="mt-1 text-gray-900">{user?.rank || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Department</label>
-                    <p className="mt-1 text-gray-900">{user?.department || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Station</label>
-                    <p className="mt-1 text-gray-900">{user?.station || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">District</label>
-                    <p className="mt-1 text-gray-900">{user?.district || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                    <p className="mt-1 text-gray-900">{user?.phoneNumber || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Joining Date</label>
-                    <p className="mt-1 text-gray-900">
-                      {user?.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : 'Not set'}
-                    </p>
-                  </div>
-                </>
-              ) : (
+              {/* Profile Information */}
+              <div className="space-y-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Bio</label>
-                  <p className="mt-1 text-gray-900 text-sm">{user?.bio || 'No bio yet'}</p>
+                  <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                  <p className="mt-1 text-gray-900">
+                    {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'Not set'}
+                  </p>
                 </div>
-              )}
+
+                {/* Conditional display based on user type */}
+                {userType === 'police' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Police ID</label>
+                      <p className="mt-1 text-gray-900">{user?.policeId || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Badge Number</label>
+                      <p className="mt-1 text-gray-900">{user?.badgeNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Rank</label>
+                      <p className="mt-1 text-gray-900">{user?.rank || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Department</label>
+                      <p className="mt-1 text-gray-900">{user?.department || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Station</label>
+                      <p className="mt-1 text-gray-900">{user?.station || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">District</label>
+                      <p className="mt-1 text-gray-900">{user?.district || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                      <p className="mt-1 text-gray-900">{user?.phoneNumber || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Joining Date</label>
+                      <p className="mt-1 text-gray-900">
+                        {user?.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : 'Not set'}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Bio</label>
+                    <p className="mt-1 text-gray-900 text-sm">{user?.bio || 'No bio yet'}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Edit Profile Button */}
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className={`w-full px-4 py-2 text-white rounded-md transition-colors ${colors.bg} ${colors.hoverBgLight}`}
+              >
+                {isEditing ? 'Cancel Editing' : 'Edit Profile'}
+              </button>
             </div>
-
-            {/* Edit Profile Button */}
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className={`w-full px-4 py-2 text-white rounded-md transition-colors ${colors.bg} ${colors.hoverBgLight}`}
-            >
-              {isEditing ? 'Cancel Editing' : 'Edit Profile'}
-            </button>
           </div>
-        </div>
 
-        {/* Right Content Area */}
-        <div className="flex-1">
-          {isEditing && (
-            <>
-              {/* Edit Profile Picture Section */}
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Change Profile Picture</h2>
-                <div className="space-y-4">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="w-full"
-                    id="profilePicture"
-                  />
-                  <div className="flex space-x-2">
-                    {selectedImage && (
-                      <button
-                        onClick={handleUploadPicture}
-                        disabled={loading}
-                        className={`px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 ${colors.bg} ${colors.hoverBgLight}`}
-                      >
-                        Upload
-                      </button>
-                    )}
-                    {user?.profilePicture?.url && (
-                      <button
-                        onClick={handleDeletePicture}
-                        disabled={loading}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-red-400"
-                      >
-                        Delete Picture
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Edit Profile Information Section */}
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Edit Profile Information</h2>
-                <form onSubmit={handleUpdateProfile} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          {/* Right Content Area */}
+          <div className="flex-1">
+            {isEditing && (
+              <>
+                {/* Edit Profile Picture Section */}
+                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Change Profile Picture</h2>
+                  <div className="space-y-4">
                     <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="w-full"
+                      id="profilePicture"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                    <input
-                      type="date"
-                      name="dateOfBirth"
-                      value={formData.dateOfBirth}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* Conditional fields based on user type */}
-                  {userType === 'police' ? (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Rank</label>
-                        <select
-                          name="rank"
-                          value={formData.rank}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    <div className="flex space-x-2">
+                      {selectedImage && (
+                        <button
+                          onClick={handleUploadPicture}
+                          disabled={loading}
+                          className={`px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 ${colors.bg} ${colors.hoverBgLight}`}
                         >
-                          <option value="">Select Rank</option>
-                          <option value="Constable">Constable</option>
-                          <option value="Assistant Sub-Inspector">Assistant Sub-Inspector</option>
-                          <option value="Sub-Inspector">Sub-Inspector</option>
-                          <option value="Inspector">Inspector</option>
-                          <option value="Deputy Superintendent">Deputy Superintendent</option>
-                          <option value="Superintendent">Superintendent</option>
-                          <option value="Additional Deputy Inspector General">Additional Deputy Inspector General</option>
-                          <option value="Deputy Inspector General">Deputy Inspector General</option>
-                          <option value="Inspector General">Inspector General</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                        <input
-                          type="text"
-                          name="department"
-                          value={formData.department}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Station</label>
-                        <input
-                          type="text"
-                          name="station"
-                          value={formData.station}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
-                        <input
-                          type="text"
-                          name="district"
-                          value={formData.district}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                        <input
-                          type="tel"
-                          name="phoneNumber"
-                          value={formData.phoneNumber}
-                          onChange={handleChange}
-                          placeholder="01XXXXXXXXX"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
-                        <input
-                          type="date"
-                          name="joiningDate"
-                          value={formData.joiningDate}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                      <textarea
-                        name="bio"
-                        value={formData.bio}
-                        onChange={handleChange}
-                        rows="4"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Tell us about yourself..."
-                      />
+                          Upload
+                        </button>
+                      )}
+                      {user?.profilePicture?.url && (
+                        <button
+                          onClick={handleDeletePicture}
+                          disabled={loading}
+                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-red-400"
+                        >
+                          Delete Picture
+                        </button>
+                      )}
                     </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
-                  >
-                    {loading ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </form>
-              </div>
-
-              {/* Change Password Section */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-gray-800">Change Password</h2>
-                  <button
-                    onClick={() => setIsChangingPassword(!isChangingPassword)}
-                    className="px-4 py-2 text-blue-600 hover:text-blue-800"
-                  >
-                    {isChangingPassword ? 'Cancel' : 'Change'}
-                  </button>
+                  </div>
                 </div>
 
-                {isChangingPassword && (
-                  <form onSubmit={handleChangePassword} className="space-y-4">
+                {/* Edit Profile Information Section */}
+                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Edit Profile Information</h2>
+                  <form onSubmit={handleUpdateProfile} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                       <input
-                        type="password"
-                        name="currentPassword"
-                        value={passwordData.currentPassword}
-                        onChange={handlePasswordChange}
-                        required
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
                       <input
-                        type="password"
-                        name="newPassword"
-                        value={passwordData.newPassword}
-                        onChange={handlePasswordChange}
-                        required
+                        type="date"
+                        name="dateOfBirth"
+                        value={formData.dateOfBirth}
+                        onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={passwordData.confirmPassword}
-                        onChange={handlePasswordChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+
+                    {/* Conditional fields based on user type */}
+                    {userType === 'police' ? (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Rank</label>
+                          <select
+                            name="rank"
+                            value={formData.rank}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="">Select Rank</option>
+                            <option value="Constable">Constable</option>
+                            <option value="Assistant Sub-Inspector">Assistant Sub-Inspector</option>
+                            <option value="Sub-Inspector">Sub-Inspector</option>
+                            <option value="Inspector">Inspector</option>
+                            <option value="Deputy Superintendent">Deputy Superintendent</option>
+                            <option value="Superintendent">Superintendent</option>
+                            <option value="Additional Deputy Inspector General">Additional Deputy Inspector General</option>
+                            <option value="Deputy Inspector General">Deputy Inspector General</option>
+                            <option value="Inspector General">Inspector General</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                          <input
+                            type="text"
+                            name="department"
+                            value={formData.department}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Station</label>
+                          <input
+                            type="text"
+                            name="station"
+                            value={formData.station}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+                          <input
+                            type="text"
+                            name="district"
+                            value={formData.district}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                          <input
+                            type="tel"
+                            name="phoneNumber"
+                            value={formData.phoneNumber}
+                            onChange={handleChange}
+                            placeholder="01XXXXXXXXX"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
+                          <input
+                            type="date"
+                            name="joiningDate"
+                            value={formData.joiningDate}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                        <textarea
+                          name="bio"
+                          value={formData.bio}
+                          onChange={handleChange}
+                          rows="4"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Tell us about yourself..."
+                        />
+                      </div>
+                    )}
+
                     <button
                       type="submit"
                       disabled={loading}
                       className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
                     >
-                      {loading ? 'Changing...' : 'Change Password'}
+                      {loading ? 'Saving...' : 'Save Changes'}
                     </button>
                   </form>
-                )}
-              </div>
-            </>
-          )}
+                </div>
 
-          {!isEditing && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Welcome to your profile!</h2>
-              <p className="text-gray-600">Click "Edit Profile" to update your information.</p>
-            </div>
-          )}
+                {/* Change Password Section */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-800">Change Password</h2>
+                    <button
+                      onClick={() => setIsChangingPassword(!isChangingPassword)}
+                      className="px-4 py-2 text-blue-600 hover:text-blue-800"
+                    >
+                      {isChangingPassword ? 'Cancel' : 'Change'}
+                    </button>
+                  </div>
+
+                  {isChangingPassword && (
+                    <form onSubmit={handleChangePassword} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                        <input
+                          type="password"
+                          name="currentPassword"
+                          value={passwordData.currentPassword}
+                          onChange={handlePasswordChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                        <input
+                          type="password"
+                          name="newPassword"
+                          value={passwordData.newPassword}
+                          onChange={handlePasswordChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                        <input
+                          type="password"
+                          name="confirmPassword"
+                          value={passwordData.confirmPassword}
+                          onChange={handlePasswordChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+                      >
+                        {loading ? 'Changing...' : 'Change Password'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </>
+            )}
+
+            {!isEditing && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Welcome to your profile!</h2>
+                <p className="text-gray-600">Click "Edit Profile" to update your information, or click the Settings button at the top to manage your notification preferences.</p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       )}
 
       {/* My Alerts Tab */}
@@ -616,6 +697,17 @@ const Profile = () => {
           )}
         </div>
       )}
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        emailNotifications={emailNotifications}
+        inAppNotifications={inAppNotifications}
+        onToggleEmail={handleToggleEmailNotifications}
+        onToggleInApp={handleToggleInAppNotifications}
+        loading={loading}
+      />
     </div>
   );
 };

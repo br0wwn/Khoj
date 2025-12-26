@@ -11,22 +11,22 @@ const Police = require('../models/police');
 exports.getAllAlerts = async (req, res) => {
   try {
     const { status, mine } = req.query;
-    
+
     let query = {};
-    
+
     if (status && status !== 'all') {
       query.status = status;
     }
-    
+
     // If 'mine=true' and user is authenticated, filter by ownership
     if (mine === 'true' && req.session && req.session.userId) {
       query['createdBy.userId'] = req.session.userId;
     }
-    
+
     const alerts = await Alert.find(query)
       .sort({ createdAt: -1 })
       .lean();
-    
+
     res.json({
       success: true,
       data: alerts
@@ -46,18 +46,18 @@ exports.getAllAlerts = async (req, res) => {
 exports.getAlertById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const alert = await Alert.findById(id)
       .populate('createdBy.userId', 'name email')
       .lean();
-    
+
     if (!alert) {
       return res.status(404).json({
         success: false,
         error: 'Alert not found'
       });
     }
-    
+
     res.json({
       success: true,
       data: alert
@@ -85,7 +85,7 @@ exports.createAlert = async (req, res) => {
     }
 
     const { title, description, district, upazila, location, contact_info, media, geo } = req.body;
-    
+
     // Validate required fields
     if (!title || !description || !district || !upazila || !location) {
       return res.status(400).json({
@@ -93,10 +93,10 @@ exports.createAlert = async (req, res) => {
         error: 'Missing required fields: title, description, district, upazila, location'
       });
     }
-    
+
     // Determine user model based on userType
     const userModel = req.session.userType === 'police' ? 'Police' : 'User';
-    
+
     // Create new alert with ownership
     const alertData = {
       title,
@@ -112,7 +112,7 @@ exports.createAlert = async (req, res) => {
       },
       media: media || []
     };
-    
+
     // Add geo if provided
     if (geo && geo.longitude !== undefined && geo.latitude !== undefined) {
       alertData.geo = {
@@ -120,9 +120,9 @@ exports.createAlert = async (req, res) => {
         latitude: geo.latitude
       };
     }
-    
+
     const newAlert = new Alert(alertData);
-    
+
     await newAlert.save();
 
     // Get io instance
@@ -132,25 +132,29 @@ exports.createAlert = async (req, res) => {
     (async () => {
       try {
         console.log('📧 Starting notification process for alert:', newAlert._id);
-        
+
         // Create in-app notifications and get user list
         const notificationResult = await notificationService.createAlertNotification(newAlert, req.session.userId);
         console.log('📱 In-app notifications created:', notificationResult.count);
-        
+
         if (notificationResult.success && (notificationResult.users?.length > 0 || notificationResult.police?.length > 0)) {
+          // Filter users who have email notifications enabled
+          const usersWithEmailEnabled = notificationResult.users.filter(u => u.emailNotifications !== false);
+          const policeWithEmailEnabled = notificationResult.police.filter(p => p.emailNotifications !== false);
+
           // Fetch full user details only for email recipients (limit to 50)
           const [userDetails, policeDetails] = await Promise.all([
             User.find({
-              _id: { $in: notificationResult.users.map(u => u._id).slice(0, 50) }
+              _id: { $in: usersWithEmailEnabled.map(u => u._id).slice(0, 50) }
             }).select('email name').lean(),
             Police.find({
-              _id: { $in: notificationResult.police.map(p => p._id).slice(0, 50) }
+              _id: { $in: policeWithEmailEnabled.map(p => p._id).slice(0, 50) }
             }).select('email name').lean()
           ]);
-          
+
           const recipients = [...userDetails, ...policeDetails];
           console.log(`📧 Sending emails to ${recipients.length} recipients`);
-          
+
           // Send emails in batches to respect rate limits (2 per second)
           if (recipients.length > 0) {
             const batchSize = 2;
@@ -160,22 +164,22 @@ exports.createAlert = async (req, res) => {
 
             for (let i = 0; i < recipients.length; i += batchSize) {
               const batch = recipients.slice(i, i + batchSize);
-              
+
               const batchResults = await Promise.allSettled(
                 batch.map(recipient =>
                   emailService.sendNewAlertEmail(recipient.email, recipient.name, newAlert)
                 )
               );
-              
+
               successCount += batchResults.filter(r => r.status === 'fulfilled' && r.value?.success).length;
               failCount += batchResults.filter(r => r.status === 'rejected' || !r.value?.success).length;
-              
+
               // Wait before next batch (except for last batch)
               if (i + batchSize < recipients.length) {
                 await new Promise(resolve => setTimeout(resolve, delayMs));
               }
             }
-            
+
             console.log(`📧 Email results: ${successCount} sent, ${failCount} failed`);
           }
         } else {
@@ -195,7 +199,7 @@ exports.createAlert = async (req, res) => {
         console.error('Notification error:', error);
       }
     })();
-    
+
     res.status(201).json({
       success: true,
       message: 'Alert created successfully',
@@ -226,7 +230,7 @@ exports.updateAlertStatus = async (req, res) => {
 
     const { id } = req.params;
     const { status } = req.body;
-    
+
     // Validate status
     const allowedStatuses = ['active', 'resolved', 'archived'];
     if (!status || !allowedStatuses.includes(status)) {
@@ -235,24 +239,24 @@ exports.updateAlertStatus = async (req, res) => {
         error: 'Invalid status. Must be: active, resolved, or archived'
       });
     }
-    
+
     // Find alert and check ownership
     const alert = await Alert.findOne({
       _id: id,
       'createdBy.userId': req.session.userId
     });
-    
+
     if (!alert) {
       return res.status(404).json({
         success: false,
         error: 'Alert not found or you do not have permission to update it'
       });
     }
-    
+
     // Update status
     alert.status = status;
     await alert.save();
-    
+
     res.json({
       success: true,
       message: 'Alert status updated successfully',
@@ -282,20 +286,20 @@ exports.updateAlertDetails = async (req, res) => {
 
     const { id } = req.params;
     const { title, description, district, upazila, location, contact_info, media, geo } = req.body;
-    
+
     // Find alert and check ownership
     const alert = await Alert.findOne({
       _id: id,
       'createdBy.userId': req.session.userId
     });
-    
+
     if (!alert) {
       return res.status(404).json({
         success: false,
         error: 'Alert not found or you do not have permission to update it'
       });
     }
-    
+
     // Update fields
     if (title) alert.title = title;
     if (description) alert.description = description;
@@ -310,9 +314,9 @@ exports.updateAlertDetails = async (req, res) => {
         latitude: geo.latitude
       };
     }
-    
+
     await alert.save();
-    
+
     res.json({
       success: true,
       message: 'Alert details updated successfully',
@@ -341,20 +345,20 @@ exports.deleteAlert = async (req, res) => {
     }
 
     const { id } = req.params;
-    
+
     // Find and delete only if user owns it
     const alert = await Alert.findOneAndDelete({
       _id: id,
       'createdBy.userId': req.session.userId
     });
-    
+
     if (!alert) {
       return res.status(404).json({
         success: false,
         error: 'Alert not found or you do not have permission to delete it'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Alert deleted successfully'
@@ -472,8 +476,8 @@ exports.deleteAlertMedia = async (req, res) => {
     try {
       // Delete from Cloudinary
       const resourceType = mediaToDelete.media_type === 'video' ? 'video' : 'image';
-      await cloudinary.uploader.destroy(`khoj/alert-media/${publicId.split('/')[1]}`, { 
-        resource_type: resourceType 
+      await cloudinary.uploader.destroy(`khoj/alert-media/${publicId.split('/')[1]}`, {
+        resource_type: resourceType
       });
     } catch (cloudinaryError) {
       console.error('Error deleting from Cloudinary:', cloudinaryError);

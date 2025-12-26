@@ -9,11 +9,11 @@ exports.createAlertNotification = async (alert, excludeUserId = null) => {
         const [users, police] = await Promise.all([
             User.find({
                 _id: { $ne: excludeUserId }
-            }).select('_id').limit(200).lean(),
+            }).select('_id emailNotifications').limit(200).lean(),
             Police.find({
                 district: alert.district,
                 _id: { $ne: excludeUserId }
-            }).select('_id').limit(200).lean()
+            }).select('_id emailNotifications').limit(200).lean()
         ]);
 
         const notifications = [];
