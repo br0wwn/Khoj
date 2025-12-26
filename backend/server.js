@@ -14,6 +14,9 @@ const policeProfileRoutes = require('./src/routes/policeProfileRoutes');
 const alertRoutes = require('./src/routes/alertroutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const reportToAdminRoutes = require('./src/routes/reportToAdminRoutes');
+const notificationRoutes = require('./src/routes/notificationRoutes');
+const statisticsRoutes = require('./src/routes/statisticsRoutes');
+const socialShareRoutes = require('./src/routes/socialShareRoutes');
 
 const app = express();
 
@@ -62,6 +65,9 @@ app.use('/api/profile/police', policeProfileRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/report-to-admin', reportToAdminRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/statistics', statisticsRoutes);
+app.use('/api/social-share', socialShareRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

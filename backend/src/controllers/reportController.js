@@ -1,5 +1,6 @@
 const Report = require('../models/Report');
 const cloudinary = require('../config/cloudinary');
+const AreaStatistics = require('../models/AreaStatistics');
 
 // @desc    Get all reports
 // @route   GET /api/reports
@@ -100,7 +101,10 @@ exports.createReport = async (req, res) => {
     // Create new report
     const newReport = new Report(reportData);
     await newReport.save();
-    
+
+    // Update area statistics asynchronously
+    updateAreaStatisticsAsync(district, upazila);
+
     res.status(201).json({
       success: true,
       message: 'Report created successfully',
@@ -398,3 +402,54 @@ exports.deleteReportMedia = async (req, res) => {
     });
   }
 };
+
+// Helper function to update area statistics asynchronously
+async function updateAreaStatisticsAsync(district, upazila) {
+  try {
+    const totalReports = await Report.countDocuments({ district, upazila });
+
+    let stats = await AreaStatistics.findOne({ district, upazila });
+
+    if (!stats) {
+      stats = new AreaStatistics({
+        district,
+        upazila,
+        statistics: { totalReports }
+      });
+    } else {
+      stats.statistics.totalReports = totalReports;
+    }
+
+    stats.calculateDangerLevel();
+
+    // Update monthly trends
+    const now = new Date();
+    const currentMonth = now.toLocaleString('default', { month: 'long' });
+    const currentYear = now.getFullYear();
+
+    const existingTrendIndex = stats.monthlyTrends.findIndex(
+      t => t.month === currentMonth && t.year === currentYear
+    );
+
+    if (existingTrendIndex >= 0) {
+      stats.monthlyTrends[existingTrendIndex].reportCount = totalReports;
+      stats.monthlyTrends[existingTrendIndex].dangerScore = stats.dangerScore;
+    } else {
+      stats.monthlyTrends.push({
+        month: currentMonth,
+        year: currentYear,
+        alertCount: stats.statistics.totalAlerts,
+        reportCount: totalReports,
+        dangerScore: stats.dangerScore
+      });
+
+      if (stats.monthlyTrends.length > 12) {
+        stats.monthlyTrends = stats.monthlyTrends.slice(-12);
+      }
+    }
+
+    await stats.save();
+  } catch (error) {
+    console.error('Error updating area statistics:', error);
+  }
+}

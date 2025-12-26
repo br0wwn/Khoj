@@ -1,5 +1,6 @@
 const Alert = require('../models/Alert');
 const cloudinary = require('../config/cloudinary');
+const AreaStatistics = require('../models/AreaStatistics');
 
 // @desc    Get all alerts with optional status filter
 // @route   GET /api/alerts
@@ -120,7 +121,10 @@ exports.createAlert = async (req, res) => {
     const newAlert = new Alert(alertData);
     
     await newAlert.save();
-    
+
+    // Update area statistics asynchronously
+    updateAreaStatisticsAsync(district, upazila);
+
     res.status(201).json({
       success: true,
       message: 'Alert created successfully',
@@ -177,7 +181,10 @@ exports.updateAlertStatus = async (req, res) => {
     // Update status
     alert.status = status;
     await alert.save();
-    
+
+    // Update area statistics asynchronously
+    updateAreaStatisticsAsync(alert.district, alert.upazila);
+
     res.json({
       success: true,
       message: 'Alert status updated successfully',
@@ -422,3 +429,74 @@ exports.deleteAlertMedia = async (req, res) => {
     });
   }
 };
+
+// Helper function to update area statistics asynchronously
+async function updateAreaStatisticsAsync(district, upazila) {
+  try {
+    const [alertStats] = await Alert.aggregate([
+      { $match: { district, upazila } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          active: {
+            $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+          },
+          resolved: {
+            $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    const totalAlerts = alertStats?.total || 0;
+    const activeAlerts = alertStats?.active || 0;
+    const resolvedAlerts = alertStats?.resolved || 0;
+
+    let stats = await AreaStatistics.findOne({ district, upazila });
+
+    if (!stats) {
+      stats = new AreaStatistics({
+        district,
+        upazila,
+        statistics: { totalAlerts, activeAlerts, resolvedAlerts }
+      });
+    } else {
+      stats.statistics.totalAlerts = totalAlerts;
+      stats.statistics.activeAlerts = activeAlerts;
+      stats.statistics.resolvedAlerts = resolvedAlerts;
+    }
+
+    stats.calculateDangerLevel();
+
+    // Update monthly trends
+    const now = new Date();
+    const currentMonth = now.toLocaleString('default', { month: 'long' });
+    const currentYear = now.getFullYear();
+
+    const existingTrendIndex = stats.monthlyTrends.findIndex(
+      t => t.month === currentMonth && t.year === currentYear
+    );
+
+    if (existingTrendIndex >= 0) {
+      stats.monthlyTrends[existingTrendIndex].alertCount = totalAlerts;
+      stats.monthlyTrends[existingTrendIndex].dangerScore = stats.dangerScore;
+    } else {
+      stats.monthlyTrends.push({
+        month: currentMonth,
+        year: currentYear,
+        alertCount: totalAlerts,
+        reportCount: stats.statistics.totalReports,
+        dangerScore: stats.dangerScore
+      });
+
+      if (stats.monthlyTrends.length > 12) {
+        stats.monthlyTrends = stats.monthlyTrends.slice(-12);
+      }
+    }
+
+    await stats.save();
+  } catch (error) {
+    console.error('Error updating area statistics:', error);
+  }
+}

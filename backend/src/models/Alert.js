@@ -71,6 +71,25 @@ const alertSchema = new mongoose.Schema({
     }
   },
   media: [alertMediaSchema],
+    socialShares: {
+    count: {
+      type: Number,
+      default: 0
+    },
+    platforms: {
+      facebook: { type: Number, default: 0 },
+      twitter: { type: Number, default: 0 },
+      whatsapp: { type: Number, default: 0 },
+      telegram: { type: Number, default: 0 },
+      email: { type: Number, default: 0 },
+      other: { type: Number, default: 0 }
+    }
+  },
+  visibility: {
+    type: String,
+    enum: ['public', 'restricted', 'private'],
+    default: 'public'
+  },
   logs: [{
     title: {
       type: String,

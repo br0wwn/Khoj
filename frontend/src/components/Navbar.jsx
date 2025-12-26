@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationDropdown from './NotificationDropdown';
 
 const Navbar = () => {
   const { user, userType, isAuthenticated, logout } = useAuth();
@@ -63,6 +64,13 @@ const Navbar = () => {
             >
               Statistics
             </Link>
+
+            {/* Notification Dropdown (only for authenticated users) */}
+            {isAuthenticated && (
+              <div className="text-white">
+                <NotificationDropdown />
+              </div>
+            )}
 
             {/* Profile Dropdown */}
             <div className="relative" ref={dropdownRef}>

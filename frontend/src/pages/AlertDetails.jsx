@@ -6,6 +6,7 @@ import L from 'leaflet';
 import { useAuth } from '../context/AuthContext';
 import alertService from '../services/alertService';
 import EditAlertModal from '../components/EditAlertModal';
+import SocialShareButton from '../components/SocialShareButton';
 import ReportButton from '../components/ReportButton';
 import areaData from '../data/area.json';
 
@@ -321,6 +322,11 @@ const AlertDetails = () => {
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-2">Description</h2>
             <p className="text-gray-700 whitespace-pre-wrap">{alert.description}</p>
+          </div>
+
+          {/* Social Share Section */}
+          <div className="mb-6 border-t border-gray-200 pt-6">
+            <SocialShareButton alertId={id} />
           </div>
 
           {/* Contact Info */}
