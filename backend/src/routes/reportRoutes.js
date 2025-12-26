@@ -21,7 +21,7 @@ router.post('/:id/upload-media', uploadAlertMedia.array('media', 10), reportCont
 // Delete media from report (private - only creator, not anonymous)
 router.delete('/:id/media/:mediaIndex', reportController.deleteReportMedia);
 
-// Delete report (private - only creator, not anonymous)
+// Delete report (private - only creator)
 router.delete('/:id', reportController.deleteReport);
 
 module.exports = router;

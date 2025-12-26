@@ -21,5 +21,4 @@ router.post('/upload-picture', upload.single('profilePicture'), profileControlle
 
 // Delete profile picture
 router.delete('/delete-picture', profileController.deleteProfilePicture);
-
 module.exports = router;

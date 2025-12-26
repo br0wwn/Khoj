@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
+const { requireAdminAuth } = require('../middleware/adminAuth');
 const {
   createReportToAdmin,
   getAllReportsToAdmin,
@@ -9,22 +10,19 @@ const {
   deleteReportToAdmin
 } = require('../controllers/reportToAdminController');
 
-// All routes require authentication
-router.use(requireAuth);
+// Create a report to admin (any authenticated user - uses session auth)
+router.post('/', requireAuth, createReportToAdmin);
 
-// Create a report to admin (any authenticated user)
-router.post('/', createReportToAdmin);
+// Get all reports to admin (admin only - uses JWT auth)
+router.get('/', requireAdminAuth, getAllReportsToAdmin);
 
-// Get all reports to admin (admin only - add admin middleware later)
-router.get('/', getAllReportsToAdmin);
+// Get single report to admin by ID (admin only - uses JWT auth)
+router.get('/:id', requireAdminAuth, getReportToAdminById);
 
-// Get single report to admin by ID (admin only - add admin middleware later)
-router.get('/:id', getReportToAdminById);
+// Update report status (admin only - uses JWT auth)
+router.put('/:id/status', requireAdminAuth, updateReportStatus);
 
-// Update report status (admin only - add admin middleware later)
-router.put('/:id/status', updateReportStatus);
-
-// Delete report to admin (admin only - add admin middleware later)
+// Delete report to admin (admin only - uses JWT auth)
 router.delete('/:id', deleteReportToAdmin);
 
 module.exports = router;

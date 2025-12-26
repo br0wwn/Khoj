@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useUserColors } from '../hooks/useUserColors';
+import ReportButton from './ReportButton';
 
 const AlertCard = ({ alert, variant = 'grid' }) => {
   const colors = useUserColors();
@@ -31,16 +32,17 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
   if (variant === 'list') {
     // List view for profile page (1 per row)
     return (
-      <Link to={`/alerts/${alert._id}`} className="block">
-        <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-xl font-semibold text-gray-800">{alert.title}</h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(alert.status)}`}>
-                  {alert.status}
-                </span>
-              </div>
+      <div className="relative">
+        <Link to={`/alerts/${alert._id}`} className="block">
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-800">{alert.title}</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(alert.status)}`}>
+                    {alert.status}
+                  </span>
+                </div>
               <p className="text-gray-600 mb-3 line-clamp-2">{alert.description}</p>
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <span className="flex items-center gap-1">
@@ -81,13 +83,18 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
           )}
         </div>
       </Link>
+      <div className="absolute top-6 right-6">
+        <ReportButton reportid={alert._id} reportModel="Alert" />
+      </div>
+    </div>
     );
   }
 
   // Grid view for feed page (2 columns)
   return (
-    <Link to={`/alerts/${alert._id}`} className="block h-full">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
+    <div className="relative h-full">
+      <Link to={`/alerts/${alert._id}`} className="block h-full">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
         {/* Media Section - Always present with fixed height */}
         <div className="h-48 bg-gray-200 relative flex-shrink-0">
           {alert.media && alert.media.length > 0 ? (
@@ -147,6 +154,10 @@ const AlertCard = ({ alert, variant = 'grid' }) => {
         </div>
       </div>
     </Link>
+    <div className="absolute top-2 right-2 z-10">
+      <ReportButton reportid={alert._id} reportModel="Alert" />
+    </div>
+  </div>
   );
 };
 

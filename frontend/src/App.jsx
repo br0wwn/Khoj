@@ -17,9 +17,12 @@ import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminUsersPage from './pages/admin/AdminUsersPage.jsx';
 import AdminReportsPage from './pages/admin/AdminReportsPage.jsx';
 import AdminAlertsPage from './pages/admin/AdminAlertsPage.jsx';
+import AdminViewAlertPage from './pages/admin/AdminViewAlertPage.jsx';
 import AdminPolicePage from './pages/admin/AdminPolicePage.jsx';
 import AdminAdminsPage from './pages/admin/AdminAdminsPage.jsx';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage.jsx';
+import AdminUserProfile from './pages/admin/AdminUserProfile.jsx';
+import AdminPoliceProfile from './pages/admin/AdminPoliceProfile.jsx';
 import AdminProtectedRoute from './components/AdminProtectedRoute.jsx';
 
 function App() {
@@ -47,6 +50,14 @@ function App() {
               } 
             />
             <Route 
+              path="/admin/users/:id" 
+              element={
+                <AdminProtectedRoute>
+                  <AdminUserProfile />
+                </AdminProtectedRoute>
+              } 
+            />
+            <Route 
               path="/admin/reports" 
               element={
                 <AdminProtectedRoute>
@@ -63,10 +74,26 @@ function App() {
               } 
             />
             <Route 
+              path="/admin/alerts/:id" 
+              element={
+                <AdminProtectedRoute>
+                  <AdminViewAlertPage />
+                </AdminProtectedRoute>
+              } 
+            />
+            <Route 
               path="/admin/police" 
               element={
                 <AdminProtectedRoute>
                   <AdminPolicePage />
+                </AdminProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/police/:id" 
+              element={
+                <AdminProtectedRoute>
+                  <AdminPoliceProfile />
                 </AdminProtectedRoute>
               } 
             />
