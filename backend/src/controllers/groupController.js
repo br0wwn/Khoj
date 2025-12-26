@@ -1,5 +1,5 @@
 const Group = require('../models/Group');
-const Notification = require('../models/Notification');
+const grpNotification = require('../models/GrpNotification');
 const User = require('../models/User');
 
 // Create group with invites
@@ -57,7 +57,7 @@ exports.createGroupWithInvites = async (req, res) => {
         }));
 
       if (notifications.length > 0) {
-        await Notification.insertMany(notifications);
+        await grpNotification.insertMany(notifications);
       }
     }
 
@@ -90,8 +90,8 @@ exports.acceptInvitation = async (req, res) => {
     group.members[memberIdx].status = 'accepted';
     await group.save();
 
-    // Update notification status to mark as actioned
-    await Notification.deleteOne({
+    // Update grpNotification status to mark as actioned
+    await grpNotification.deleteOne({
       groupId: groupId,
       recipient: userId,
       type: 'group_invitation'
@@ -120,8 +120,8 @@ exports.rejectInvitation = async (req, res) => {
     group.members.splice(memberIdx, 1);
     await group.save();
 
-    // Delete notification for this invitation
-    await Notification.deleteOne({
+    // Delete grpNotification for this invitation
+    await grpNotification.deleteOne({
       groupId: groupId,
       recipient: userId,
       type: 'group_invitation'
@@ -267,7 +267,7 @@ exports.deleteGroup = async (req, res) => {
     }));
 
     if (notifications.length > 0) {
-      await Notification.insertMany(notifications);
+      await grpNotification.insertMany(notifications);
     }
 
     res.json({ success: true, message: 'Group deleted' });
