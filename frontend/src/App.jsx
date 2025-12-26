@@ -13,6 +13,7 @@ import UserProfile from './pages/UserProfile.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import AlertDetails from './pages/AlertDetails.jsx';
+import Search from './pages/Search.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminUsersPage from './pages/admin/AdminUsersPage.jsx';
@@ -143,7 +144,8 @@ function App() {
                       <Route path="/chat" element={<Chat />} />
                       <Route path="/chat/:chatId" element={<ChatWindow />} />
                       <Route path="/notifications" element={<Notifications />} />
-                      <Route path="/login" element={<Login />} />
+                      <Route path="/search" element={<Search />} />
+            <Route path="/login" element={<Login />} />
                       <Route path="/signup" element={<Signup />} />
                     </Routes>
                   </div>
