@@ -7,6 +7,9 @@ const { requireAuth } = require('../middleware/auth');
 // All routes require authentication
 router.use(requireAuth);
 
+// Get police profile by ID (public for logged-in users)
+router.get('/:id', policeProfileController.getPoliceProfileById);
+
 // Update police profile
 router.put('/update', policeProfileController.updateProfile);
 

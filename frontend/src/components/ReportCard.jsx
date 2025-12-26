@@ -1,4 +1,5 @@
 import React from 'react';
+import ReportButton from './ReportButton';
 
 const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, onClick }) => {
 
@@ -14,20 +15,21 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
 
   if (variant === 'list') {
     return (
-      <div 
-        className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
-        onClick={onClick}
-      >
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-xl font-semibold text-gray-800">{report.title}</h3>
-              {!report.createdBy && (
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                  Anonymous
-                </span>
-              )}
-            </div>
+      <div className="relative">
+        <div 
+          className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={onClick}
+        >
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-xl font-semibold text-gray-800">{report.title}</h3>
+                {!report.createdBy && (
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    Anonymous
+                  </span>
+                )}
+              </div>
             <p className="text-gray-600 mb-3 line-clamp-2">{report.description}</p>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span className="flex items-center gap-1">
@@ -75,15 +77,20 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
           </div>
         )}
       </div>
+      <div className="absolute top-6 right-6">
+        <ReportButton reportid={report._id} reportModel="Report" />
+      </div>
+    </div>
     );
   }
 
   // Grid view
   return (
-    <div 
-      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={onClick}
-    >
+    <div className="relative">
+      <div 
+        className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+        onClick={onClick}
+      >
       {report.media && report.media.length > 0 && (
         <div className="h-48 bg-gray-200 overflow-hidden">
           {report.media[0].media_type === 'image' ? (
@@ -132,6 +139,10 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
         </div>
       </div>
     </div>
+    <div className="absolute top-2 right-2 z-10">
+      <ReportButton reportid={report._id} reportModel="Report" />
+    </div>
+  </div>
   );
 };
 

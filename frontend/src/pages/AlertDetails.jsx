@@ -6,6 +6,7 @@ import L from 'leaflet';
 import { useAuth } from '../context/AuthContext';
 import alertService from '../services/alertService';
 import EditAlertModal from '../components/EditAlertModal';
+import ReportButton from '../components/ReportButton';
 import areaData from '../data/area.json';
 
 // Fix Leaflet default icon issue
@@ -303,9 +304,14 @@ const AlertDetails = () => {
                 <span className="text-sm ml-6">{formatDate(alert.createdAt)}</span>
               </div>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(alert.status)}`}>
-              {alert.status}
-            </span>
+            <div className="flex items-center gap-3">
+              {!isOwner && (
+                <ReportButton reportid={alert._id} reportModel="Alert" className="bg-white/20 hover:bg-white/30" />
+              )}
+              <span className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(alert.status)}`}>
+                {alert.status}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -507,7 +513,45 @@ const AlertDetails = () => {
         </div>
 
         {/* Logs Sidebar - Right */}
-        <div className="w-80 flex-shrink-0">
+        <div className="w-80 flex-shrink-0 space-y-4">
+          {/* Creator Info */}
+          {alert.createdBy && (
+            <div className="bg-white rounded-lg shadow-lg p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Posted By</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  {alert.createdBy.userId ? (
+                    <a
+                      href={`/profile/${alert.createdBy.userType === 'police' ? 'police' : 'user'}/${
+                        typeof alert.createdBy.userId === 'object' 
+                          ? alert.createdBy.userId._id || alert.createdBy.userId.id
+                          : alert.createdBy.userId
+                      }`}
+                      className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {alert.createdBy.userType === 'police' 
+                        ? alert.createdBy.userId?.name || 'Police Officer'
+                        : alert.createdBy.userId?.name || 'User'}
+                    </a>
+                  ) : (
+                    <p className="text-sm font-medium text-gray-900">
+                      {alert.createdBy.userType === 'police' ? 'Police Officer' : 'User'}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    {alert.createdBy.userType === 'police' ? 'Police' : 'Citizen'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Police Log */}
           <div className="bg-white rounded-lg shadow-lg p-4 sticky top-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-800">Police Log</h2>

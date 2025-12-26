@@ -2,6 +2,49 @@ const Police = require('../models/police');
 const cloudinary = require('../config/cloudinary');
 const bcrypt = require('bcryptjs');
 
+// @desc    Get police profile by ID
+// @route   GET /api/profile/police/:id
+// @access  Private
+exports.getPoliceProfileById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const police = await Police.findById(id).select('-password');
+        if (!police) {
+            return res.status(404).json({
+                success: false,
+                message: 'Police officer not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            police: {
+                id: police._id,
+                name: police.name,
+                email: police.email,
+                policeId: police.policeId,
+                badgeNumber: police.badgeNumber,
+                rank: police.rank,
+                department: police.department,
+                station: police.station,
+                district: police.district,
+                phoneNumber: police.phoneNumber,
+                dateOfBirth: police.dateOfBirth,
+                joiningDate: police.joiningDate,
+                profilePicture: police.profilePicture,
+                createdAt: police.createdAt
+            }
+        });
+    } catch (error) {
+        console.error('Get police profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error fetching police profile'
+        });
+    }
+};
+
 // @desc    Update police officer profile
 // @route   PUT /api/profile/police/update
 // @access  Private

@@ -2,6 +2,42 @@ const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const bcrypt = require('bcryptjs');
 
+// @desc    Get user profile by ID
+// @route   GET /api/profile/user/:id
+// @access  Private
+exports.getUserProfileById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id).select('-password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        dateOfBirth: user.dateOfBirth,
+        bio: user.bio,
+        profilePicture: user.profilePicture,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error fetching user profile'
+    });
+  }
+};
+
 // @desc    Update user profile (name, bio)
 // @route   PUT /api/profile/update
 // @access  Private

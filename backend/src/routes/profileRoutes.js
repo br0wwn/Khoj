@@ -7,6 +7,9 @@ const { requireAuth } = require('../middleware/auth');
 // All routes require authentication
 router.use(requireAuth);
 
+// Get user profile by ID (public for logged-in users)
+router.get('/user/:id', profileController.getUserProfileById);
+
 // Update profile (name, bio, dateOfBirth)
 router.put('/update', profileController.updateProfile);
 
@@ -18,5 +21,4 @@ router.post('/upload-picture', upload.single('profilePicture'), profileControlle
 
 // Delete profile picture
 router.delete('/delete-picture', profileController.deleteProfilePicture);
-
 module.exports = router;
