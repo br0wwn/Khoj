@@ -5,7 +5,7 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 
 const ChatWindow = () => {
-    const { conversationId } = useParams();
+    const { chatId: conversationId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
     const { socket } = useSocket();
@@ -140,8 +140,8 @@ const ChatWindow = () => {
         try {
             setSending(true);
 
-            // Send message with media files
-            await sendMessage(conversationId, newMessage.trim(), selectedFiles);
+            // Send message with media files (empty string if no text)
+            await sendMessage(conversationId, newMessage.trim() || '', selectedFiles);
 
             // Message will be added via socket event
             setNewMessage('');
@@ -257,10 +257,17 @@ const ChatWindow = () => {
             {/* Messages Container */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                 {messages.map((message, index) => {
-                    const isOwnMessage = String(message.sender.userId._id || message.sender.userId) === String(user.id);
+                    // Safely handle sender data that might be null or incomplete
+                    const senderId = message.sender?.userId?._id || message.sender?.userId;
+                    const senderName = message.sender?.userId?.name || 'Unknown';
+                    const senderPicture = message.sender?.userId?.profilePicture?.url;
+                    
+                    if (!senderId) return null; // Skip messages with no sender data
+                    
+                    const isOwnMessage = String(senderId) === String(user?.id);
                     const showAvatar =
                         index === 0 ||
-                        messages[index - 1].sender.userId._id !== message.sender.userId._id;
+                        (messages[index - 1]?.sender?.userId?._id !== senderId);
 
                     return (
                         <div
@@ -273,15 +280,15 @@ const ChatWindow = () => {
                             >
                                 {showAvatar && !isOwnMessage && (
                                     <div className="flex-shrink-0">
-                                        {message.sender.userId.profilePicture?.url ? (
+                                        {senderPicture ? (
                                             <img
-                                                src={message.sender.userId.profilePicture.url}
-                                                alt={message.sender.userId.name}
+                                                src={senderPicture}
+                                                alt={senderName}
                                                 className="w-8 h-8 rounded-full object-cover"
                                             />
                                         ) : (
                                             <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs">
-                                                {message.sender.userId.name?.charAt(0).toUpperCase()}
+                                                {senderName.charAt(0).toUpperCase()}
                                             </div>
                                         )}
                                     </div>

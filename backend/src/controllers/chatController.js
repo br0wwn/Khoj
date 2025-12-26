@@ -256,7 +256,7 @@ exports.sendMessage = async (req, res) => {
         const currentUnreadCount = conversation.unreadCount.get(receiver.userId.toString()) || 0;
         conversation.unreadCount.set(receiver.userId.toString(), currentUnreadCount + 1);
         conversation.lastMessage = {
-            text: messageText.trim(),
+            text: messageText?.trim() || (media.length > 0 ? '📷 Image' : ''),
             senderId: senderId,
             timestamp: new Date()
         };
