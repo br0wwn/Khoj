@@ -5,6 +5,44 @@ const API_URL = '/api/statistics';
 axios.defaults.withCredentials = true;
 
 const statisticsService = {
+  // Get all district statistics
+  getAllDistrictStatistics: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/districts`);
+      return response.data;
+    } catch (error) {
+      console.error('Get district statistics error:', error.response || error);
+      throw error;
+    }
+  },
+
+  // Get upazila statistics for a district
+  getUpazilaStatistics: async (district) => {
+    try {
+      const response = await axios.get(`${API_URL}/upazilas`, {
+        params: { district }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get upazila statistics error:', error.response || error);
+      throw error;
+    }
+  },
+
+  // Get alerts with locations for map
+  getAlertsForMap: async (district, upazila = null) => {
+    try {
+      const params = { district };
+      if (upazila) params.upazila = upazila;
+      
+      const response = await axios.get(`${API_URL}/alerts-map`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Get alerts for map error:', error.response || error);
+      throw error;
+    }
+  },
+
   // Get area statistics
   getAreaStatistics: async (district, upazila) => {
     try {

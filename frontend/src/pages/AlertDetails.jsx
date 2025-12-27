@@ -41,6 +41,9 @@ const AlertDetails = () => {
   const [logUpazila, setLogUpazila] = useState('');
   const [districts] = useState([...areaData].sort((a, b) => a.district.localeCompare(b.district)));
   const [availableUpazilas, setAvailableUpazilas] = useState([]);
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [nearbyAlerts, setNearbyAlerts] = useState([]);
 
   useEffect(() => {
     const fetchAlertDetails = async () => {
@@ -48,6 +51,10 @@ const AlertDetails = () => {
         const response = await alertService.getAlertById(id);
         if (response.success) {
           setAlert(response.data);
+          // Fetch nearby alerts
+          if (response.data.district && response.data.upazila) {
+            fetchNearbyAlerts(response.data.district, response.data.upazila, id);
+          }
         }
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to load alert details');
@@ -79,6 +86,22 @@ const AlertDetails = () => {
       setError(err.response?.data?.error || 'Failed to load alert details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchNearbyAlerts = async (district, upazila, currentAlertId) => {
+    try {
+      const response = await alertService.getAllAlerts({ district, upazila, status: 'active' });
+      if (response.success) {
+        // Filter out current alert and get 5 most recent
+        const filtered = response.data
+          .filter(a => a._id !== currentAlertId)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 5);
+        setNearbyAlerts(filtered);
+      }
+    } catch (err) {
+      console.error('Failed to fetch nearby alerts:', err);
     }
   };
 
@@ -310,7 +333,7 @@ const AlertDetails = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Back button */}
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/feed')}
         className="mb-4 flex items-center text-blue-600 hover:text-blue-800"
       >
         <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,16 +342,83 @@ const AlertDetails = () => {
         Back to Feed
       </button>
 
-      <div className="flex gap-6">
-        {/* Alert Details - Left */}
+      <div className="flex gap-8">
+        {/* Nearby Alerts - Left Sidebar */}
+        <div className="w-80 flex-shrink-0 space-y-4">
+          {nearbyAlerts.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-4 sticky top-4">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">
+                More Alerts around {alert.upazila}, {alert.district}
+              </h2>
+              <div className="space-y-3 max-h-[800px] overflow-y-auto">
+                {nearbyAlerts.map((nearbyAlert) => (
+                  <div
+                    key={nearbyAlert._id}
+                    onClick={() => navigate(`/alerts/${nearbyAlert._id}`)}
+                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer border border-gray-200"
+                  >
+                    {nearbyAlert.media && nearbyAlert.media.length > 0 && (
+                      <img
+                        src={nearbyAlert.media[0].media_url}
+                        alt={nearbyAlert.title}
+                        className="w-full h-32 object-cover rounded-lg mb-2"
+                      />
+                    )}
+                    <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-2">{nearbyAlert.title}</h3>
+                    <p className="text-xs text-gray-600 line-clamp-2 mb-2">{nearbyAlert.description}</p>
+                    <div className="flex flex-col gap-1 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {nearbyAlert.location}
+                      </span>
+                      <span>{new Date(nearbyAlert.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Alert Details - Center (Bigger) */}
         <div className="flex-1">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 text-white">
+            <div className="bg-gradient-to-r from-[#8E1616] to-[#6B0F0F] px-6 py-4 text-white">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold mb-2">{alert.title}</h1>
-                  <div className="flex flex-col gap-2 text-blue-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h1 className="text-3xl font-bold">{alert.title}</h1>
+                    {alert.createdBy && (
+                      <span className="text-sm text-white/80 ml-2">
+                        • posted by{' '}
+                        {alert.createdBy.userId ? (
+                          <a
+                            href={`/view-profile/${alert.createdBy.userType === 'police' ? 'police' : 'user'}/${
+                              typeof alert.createdBy.userId === 'object' 
+                                ? alert.createdBy.userId._id || alert.createdBy.userId.id
+                                : alert.createdBy.userId
+                            }`}
+                            className="text-white hover:underline font-medium"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {alert.createdBy.userType === 'police' 
+                              ? alert.createdBy.userId?.name || 'Police Officer'
+                              : alert.createdBy.userId?.name || 'User'}
+                          </a>
+                        ) : (
+                          <span className="font-medium">
+                            {alert.createdBy.userType === 'police' ? 'Police Officer' : 'User'}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2 text-white/90">
                     <span className="flex items-center gap-1">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -344,15 +434,29 @@ const AlertDetails = () => {
                     <span className="text-sm ml-6">{formatDate(alert.createdAt)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-              {!isOwner && (
-                <ReportButton reportid={alert._id} reportModel="Alert" className="bg-white/20 hover:bg-white/30" />
-              )}
-              <span className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(alert.status)}`}>
-                    {alert.status}
-                  </span>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    {!isOwner && (
+                      <ReportButton reportid={alert._id} reportModel="Alert" className="bg-white/20 hover:bg-white/30" />
+                    )}
+                    <span className={`px-4 py-2 rounded-full text-sm font-medium border bg-white/20 text-white border-white/40`}>
+                      {alert.status}
+                    </span>
+                  </div>
+                  {isAuthenticated && !isOwner && alert.status !== 'resolved' && (
+                    <button
+                      onClick={handleContactCreator}
+                      className="p-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors backdrop-blur-sm border border-white/40"
+                      title="Message creator"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </button>
+                  )}
+                  <SocialShareButton alertId={id} compact={true} />
                 </div>
-          </div>
+              </div>
             </div>
 
             {/* Content */}
@@ -363,11 +467,6 @@ const AlertDetails = () => {
                 <p className="text-gray-700 whitespace-pre-wrap">{alert.description}</p>
               </div>
 
-          {/* Social Share Section */}
-          <div className="mb-6 border-t border-gray-200 pt-6">
-            <SocialShareButton alertId={id} />
-          </div>
-
               {/* Contact Info */}
               {alert.contact_info && (
                 <div className="mb-6">
@@ -376,18 +475,52 @@ const AlertDetails = () => {
                 </div>
               )}
 
-              {/* Message Button - For non-owners */}
-              {isAuthenticated && !isOwner && alert.status !== 'resolved' && (
+              {/* Media */}
+              {alert.media && alert.media.length > 0 && (
                 <div className="mb-6">
-                  <button
-                    onClick={handleContactCreator}
-                    className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    Message
-                  </button>
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3">Media</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {alert.media.map((item, index) => (
+                      <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200 group cursor-pointer shadow-md hover:shadow-lg transition-shadow" onClick={() => {
+                        setSelectedMedia(item);
+                        setIsMediaModalOpen(true);
+                      }}>
+                        {item.media_type === 'image' ? (
+                          <img
+                            src={item.media_url}
+                            alt={`Alert media ${index + 1}`}
+                            className="w-full h-96 object-cover hover:opacity-90 transition-opacity"
+                          />
+                        ) : (
+                          <div className="relative">
+                            <video
+                              src={item.media_url}
+                              className="w-full h-96 object-cover bg-black"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                              <svg className="w-16 h-16 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                        {isOwner && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMedia(index);
+                            }}
+                            className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 z-10"
+                            title="Delete media"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -417,45 +550,6 @@ const AlertDetails = () => {
                   </div>
                   <div className="mt-2 text-xs text-gray-600">
                     Coordinates: {alert.geo.latitude.toFixed(6)}, {alert.geo.longitude.toFixed(6)}
-                  </div>
-                </div>
-              )}
-
-              {/* Media */}
-              {alert.media && alert.media.length > 0 && (
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-gray-800 mb-3">Media</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {alert.media.map((item, index) => (
-                      <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200 group">
-                        {item.media_type === 'image' ? (
-                          <img
-                            src={item.media_url}
-                            alt={`Alert media ${index + 1}`}
-                            className="w-full h-48 object-cover"
-                          />
-                        ) : (
-                          <video
-                            src={item.media_url}
-                            controls
-                            className="w-full h-48 object-cover bg-black"
-                          >
-                            Your browser does not support the video tag.
-                          </video>
-                        )}
-                        {isOwner && (
-                          <button
-                            onClick={() => handleDeleteMedia(index)}
-                            className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
-                            title="Delete media"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
@@ -583,48 +677,13 @@ const AlertDetails = () => {
                 </div>
               )}
             </div>
+
+            
           </div>
         </div>
 
         {/* Logs Sidebar - Right */}
         <div className="w-80 flex-shrink-0 space-y-4">
-          {/* Creator Info */}
-          {alert.createdBy && (
-            <div className="bg-white rounded-lg shadow-lg p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Posted By</h3>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  {alert.createdBy.userId ? (
-                    <a
-                      href={`/view-profile/${alert.createdBy.userType === 'police' ? 'police' : 'user'}/${
-                        typeof alert.createdBy.userId === 'object' 
-                          ? alert.createdBy.userId._id || alert.createdBy.userId.id
-                          : alert.createdBy.userId
-                      }`}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                      {alert.createdBy.userType === 'police' 
-                        ? alert.createdBy.userId?.name || 'Police Officer'
-                        : alert.createdBy.userId?.name || 'User'}
-                    </a>
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">
-                      {alert.createdBy.userType === 'police' ? 'Police Officer' : 'User'}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-500">
-                    {alert.createdBy.userType === 'police' ? 'Police' : 'Citizen'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Police Log */}
           <div className="bg-white rounded-lg shadow-lg p-4 sticky top-4">
             <div className="flex justify-between items-center mb-4">
@@ -740,7 +799,7 @@ const AlertDetails = () => {
             )}
 
             {/* Logs List */}
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="space-y-3 max-h-[600px] overflow-y-auto">
               {alert?.logs && alert.logs.length > 0 ? (
                 [...alert.logs].reverse().map((log, index) => (
                   <div key={index} className="pb-3 border-b border-gray-200 last:border-0">
@@ -780,6 +839,41 @@ const AlertDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Media Modal */}
+      {isMediaModalOpen && selectedMedia && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[9999] p-4"
+          onClick={() => setIsMediaModalOpen(false)}
+        >
+          <div className="relative max-w-6xl max-h-full" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setIsMediaModalOpen(false)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            {selectedMedia.media_type === 'image' ? (
+              <img
+                src={selectedMedia.media_url}
+                alt="Alert media"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              />
+            ) : (
+              <video
+                src={selectedMedia.media_url}
+                controls
+                autoPlay
+                className="max-w-full max-h-[90vh] rounded-lg"
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Edit Alert Modal */}
       {isEditModalOpen && (

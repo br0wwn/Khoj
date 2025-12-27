@@ -2,6 +2,164 @@ const AreaStatistics = require('../models/AreaStatistics');
 const Alert = require('../models/Alert');
 const Report = require('../models/Report');
 
+// Helper function to calculate danger level based on new criteria
+function calculateDangerLevel(alertCount, type = 'upazila') {
+  if (type === 'district') {
+    if (alertCount >= 12) return 'danger';
+    if (alertCount >= 5) return 'cautious';
+    return 'safe';
+  } else {
+    // upazila
+    if (alertCount >= 4) return 'danger';
+    if (alertCount >= 2) return 'cautious';
+    return 'safe';
+  }
+}
+
+// @desc    Get all district statistics
+// @route   GET /api/statistics/districts
+// @access  Public
+exports.getAllDistrictStatistics = async (req, res) => {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Get all districts with their alert counts
+    const districtStats = await Alert.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: thirtyDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: '$district',
+          alertCount: { $sum: 1 },
+          activeAlerts: {
+            $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $sort: { alertCount: -1 }
+      }
+    ]);
+
+    const districts = districtStats.map(stat => ({
+      district: stat._id,
+      alertCount: stat.alertCount,
+      activeAlerts: stat.activeAlerts,
+      dangerLevel: calculateDangerLevel(stat.alertCount, 'district')
+    }));
+
+    res.json({
+      success: true,
+      data: districts
+    });
+  } catch (error) {
+    console.error('Error fetching district statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get upazila statistics for a district
+// @route   GET /api/statistics/upazilas
+// @access  Public
+exports.getUpazilaStatistics = async (req, res) => {
+  try {
+    const { district } = req.query;
+    
+    if (!district) {
+      return res.status(400).json({
+        success: false,
+        error: 'District is required'
+      });
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const upazilaStats = await Alert.aggregate([
+      {
+        $match: {
+          district,
+          createdAt: { $gte: thirtyDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: '$upazila',
+          alertCount: { $sum: 1 },
+          activeAlerts: {
+            $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $sort: { alertCount: -1 }
+      }
+    ]);
+
+    const upazilas = upazilaStats.map(stat => ({
+      upazila: stat._id,
+      alertCount: stat.alertCount,
+      activeAlerts: stat.activeAlerts,
+      dangerLevel: calculateDangerLevel(stat.alertCount, 'upazila')
+    }));
+
+    res.json({
+      success: true,
+      data: upazilas
+    });
+  } catch (error) {
+    console.error('Error fetching upazila statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get alerts with locations for map display
+// @route   GET /api/statistics/alerts-map
+// @access  Public
+exports.getAlertsForMap = async (req, res) => {
+  try {
+    const { district, upazila } = req.query;
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    let query = {
+      createdAt: { $gte: thirtyDaysAgo },
+      'geo.latitude': { $exists: true },
+      'geo.longitude': { $exists: true }
+    };
+
+    if (district) query.district = district;
+    if (upazila) query.upazila = upazila;
+
+    const alerts = await Alert.find(query)
+      .select('title location district upazila geo status createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: alerts
+    });
+  } catch (error) {
+    console.error('Error fetching alerts for map:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
 // @desc    Get statistics for a specific area
 // @route   GET /api/statistics/area
 // @access  Public
