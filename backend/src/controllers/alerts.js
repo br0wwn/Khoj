@@ -11,7 +11,7 @@ const AreaStatistics = require('../models/AreaStatistics');
 // @access  Public (shows all, but can filter by ownership)
 exports.getAllAlerts = async (req, res) => {
   try {
-    const { status, mine } = req.query;
+    const { status, mine, page = 1, limit = 8 } = req.query;
 
     let query = {};
 
@@ -24,13 +24,30 @@ exports.getAllAlerts = async (req, res) => {
       query['createdBy.userId'] = req.session.userId;
     }
 
+    // Calculate pagination
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const total = await Alert.countDocuments(query);
+
+    // Fetch paginated alerts
     const alerts = await Alert.find(query)
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
       .lean();
 
     res.json({
       success: true,
-      data: alerts
+      data: alerts,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
     });
   } catch (error) {
     console.error('Error fetching alerts:', error);

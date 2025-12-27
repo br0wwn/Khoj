@@ -17,6 +17,10 @@ const Feed = () => {
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalAlerts, setTotalAlerts] = useState(0);
+  const alertsPerPage = 8;
 
   // Filters
   const [statusFilter, setStatusFilter] = useState('all');
@@ -30,7 +34,16 @@ const Feed = () => {
 
   useEffect(() => {
     fetchAlerts();
-  }, []);
+  }, [currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchAlerts();
+    }
+  }, [statusFilter, selectedDistrict, selectedUpazila, dateFilter]);
 
   // Sync searchQuery with ?q= in URL (global navbar search)
   useEffect(() => {
@@ -51,34 +64,29 @@ const Feed = () => {
     }
   }, [selectedDistrict, districts]);
 
-  // Apply filters whenever alerts or filter values change
+  // Apply client-side filters (search, district, upazila, date)
   useEffect(() => {
     const applyFilters = () => {
       let filtered = [...alerts];
 
-      // Status filter
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(alert => alert.status === statusFilter);
-      }
-
-      // Search by title
+      // Search by title (client-side)
       if (searchQuery.trim()) {
         filtered = filtered.filter(alert =>
           alert.title.toLowerCase().includes(searchQuery.toLowerCase())
         );
       }
 
-      // District filter
+      // District filter (client-side)
       if (selectedDistrict !== 'all') {
         filtered = filtered.filter(alert => alert.district === selectedDistrict);
       }
 
-      // Upazila filter
+      // Upazila filter (client-side)
       if (selectedUpazila !== 'all') {
         filtered = filtered.filter(alert => alert.upazila === selectedUpazila);
       }
 
-      // Date filter
+      // Date filter (client-side)
       if (dateFilter !== 'all') {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -103,31 +111,31 @@ const Feed = () => {
         });
       }
 
-      // Sort: User's own alerts first, then by date
-      filtered.sort((a, b) => {
-        const aIsOwn = user && a.createdBy?.userId === user.id;
-        const bIsOwn = user && b.createdBy?.userId === user.id;
-
-        if (aIsOwn && !bIsOwn) return -1;
-        if (!aIsOwn && bIsOwn) return 1;
-
-        // If both are own or both are not own, sort by date (newest first)
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      });
-
       setFilteredAlerts(filtered);
     };
 
     applyFilters();
-  }, [alerts, statusFilter, searchQuery, selectedDistrict, selectedUpazila, dateFilter, user]);
+  }, [alerts, searchQuery, selectedDistrict, selectedUpazila, dateFilter]);
 
   const fetchAlerts = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await alertService.getAllAlerts();
+      const params = {
+        page: currentPage,
+        limit: alertsPerPage
+      };
+
+      // Add filters to params
+      if (statusFilter !== 'all') {
+        params.status = statusFilter;
+      }
+
+      const response = await alertService.getAllAlerts(params);
       if (response.success) {
         setAlerts(response.data);
+        setTotalPages(response.pagination?.totalPages || 1);
+        setTotalAlerts(response.pagination?.total || 0);
       }
     } catch (err) {
       setError('Failed to load alerts');
@@ -147,6 +155,7 @@ const Feed = () => {
     setSelectedDistrict('all');
     setSelectedUpazila('all');
     setDateFilter('all');
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() !== '' ||
@@ -228,7 +237,7 @@ const Feed = () => {
 
         {/* Results count */}
         <div className="text-sm text-gray-600">
-          Showing {filteredAlerts.length} of {alerts.length} alerts
+          Showing {filteredAlerts.length} of {alerts.length} alerts on page {currentPage} (Total: {totalAlerts})
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
@@ -319,10 +328,73 @@ const Feed = () => {
         </div>
       )}
 
+      {/* Pagination Controls */}
+      {!loading && !error && totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mb-6">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              currentPage === 1
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Previous
+          </button>
+          
+          <div className="flex gap-1">
+            {[...Array(totalPages)].map((_, index) => {
+              const page = index + 1;
+              // Show first, last, current, and pages around current
+              const showPage = page === 1 || 
+                             page === totalPages || 
+                             Math.abs(page - currentPage) <= 1;
+              
+              if (!showPage && page === 2) {
+                return <span key={page} className="px-2 py-2 text-gray-500">...</span>;
+              }
+              if (!showPage && page === totalPages - 1) {
+                return <span key={page} className="px-2 py-2 text-gray-500">...</span>;
+              }
+              if (!showPage) return null;
+              
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    currentPage === page
+                      ? `${colors.bg} text-white`
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              currentPage === totalPages
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      )}
+
       {/* Alerts Grid */}
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">Loading alerts...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
+          {[...Array(8)].map((_, index) => (
+            <AlertCardSkeleton key={index} />
+          ))}
         </div>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -361,11 +433,74 @@ const Feed = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
-          {filteredAlerts.map((alert) => (
-            <AlertCard key={alert._id} alert={alert} variant="grid" showContactButton={true} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
+            {filteredAlerts.map((alert) => (
+              <AlertCard key={alert._id} alert={alert} variant="grid" showContactButton={true} />
+            ))}
+          </div>
+
+          {/* Pagination Controls at Bottom */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-8">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  currentPage === 1
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Previous
+              </button>
+              
+              <div className="flex gap-1">
+                {[...Array(totalPages)].map((_, index) => {
+                  const page = index + 1;
+                  // Show first, last, current, and pages around current
+                  const showPage = page === 1 || 
+                                 page === totalPages || 
+                                 Math.abs(page - currentPage) <= 1;
+                  
+                  if (!showPage && page === 2) {
+                    return <span key={page} className="px-2 py-2 text-gray-500">...</span>;
+                  }
+                  if (!showPage && page === totalPages - 1) {
+                    return <span key={page} className="px-2 py-2 text-gray-500">...</span>;
+                  }
+                  if (!showPage) return null;
+                  
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-4 py-2 rounded-md transition-colors ${
+                        currentPage === page
+                          ? `${colors.bg} text-white`
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  currentPage === totalPages
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Alert Modal */}
