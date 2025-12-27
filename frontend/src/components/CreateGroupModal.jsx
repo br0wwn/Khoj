@@ -19,7 +19,10 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated }) => {
   const [citizenDropdownOpen, setCitizenDropdownOpen] = useState(false);
   const [policeDropdownOpen, setPoliceDropdownOpen] = useState(false);
 
-  const districts = [...areaData].sort((a, b) => a.district.localeCompare(b.district));
+  const districts = React.useMemo(() => 
+    [...areaData].sort((a, b) => a.district.localeCompare(b.district)),
+    []
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -36,7 +39,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated }) => {
     } else {
       setUpazilas([]);
     }
-  }, [formData.district, districts]);
+  }, [formData.district]);
 
   const loadUsers = async () => {
     setLoading(true);

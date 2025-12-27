@@ -32,7 +32,12 @@ const groupSchema = new mongoose.Schema({
   members: [{
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      refPath: 'members.userType'
+    },
+    userType: {
+      type: String,
+      enum: ['User', 'Police'],
+      default: 'User'
     },
     status: {
       type: String,

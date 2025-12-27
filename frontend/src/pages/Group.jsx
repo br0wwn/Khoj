@@ -5,6 +5,7 @@ import alertService from '../services/alertService';
 import reportService from '../services/reportService';
 import CreateGroupModal from '../components/CreateGroupModal';
 import GroupChat from '../components/GroupChat';
+import areaData from '../data/area.json';
 
 const Group = () => {
   const { user } = useAuth();
@@ -16,6 +17,18 @@ const Group = () => {
   const [nearbyReports, setNearbyReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isMemberListOpen, setIsMemberListOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchDistrict, setSearchDistrict] = useState('');
+  const [searchUpazila, setSearchUpazila] = useState('');
+
+  // Debug: Log user object structure
+  useEffect(() => {
+    console.log('User object:', user);
+    console.log('User ID (_id):', user?._id);
+    console.log('User ID (id):', user?.id);
+  }, [user]);
 
   useEffect(() => {
     loadAllData();
@@ -190,12 +203,24 @@ const Group = () => {
       <div className="max-w-[1800px] mx-auto mb-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Community Groups</h1>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-          >
-            + Create Group
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsSearchModalOpen(true)}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
+              title="Search Groups"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Search
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              + Create Group
+            </button>
+          </div>
         </div>
       </div>
 
@@ -334,29 +359,35 @@ const Group = () => {
                   </button>
                 </div>
 
-                {/* Members */}
+                {/* Founder and Member List Button */}
                 <div className="flex-1 overflow-y-auto pt-4 border-t">
-                  <h3 className="font-semibold text-gray-800 mb-3">Members</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {selectedGroup.members?.filter(m => m.status === 'accepted').map((member) => (
-                      <div key={member.userId?._id} className="flex items-center gap-2 p-2 bg-gray-50 rounded text-xs">
-                        <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                          {member.userId?.name?.[0] || '?'}
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Founder</h3>
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <div className="w-8 h-8 bg-[#8E1616] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                          {selectedGroup.createdBy?.name?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <span className="truncate">{member.userId?.name || 'User'}</span>
+                        <span className="text-sm font-medium text-gray-800">{selectedGroup.createdBy?.name || 'Unknown'}</span>
                       </div>
-                    ))}
+                    </div>
+                    <button
+                      onClick={() => setIsMemberListOpen(true)}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                    >
+                      View All Members ({selectedGroup.members?.filter(m => m.status === 'accepted').length || 0})
+                    </button>
                   </div>
                 </div>
               </div>
 
               {/* Group Chatroom */}
               <div className="bg-white rounded-lg shadow-md overflow-hidden h-[500px] flex flex-col">
-                <div className="bg-blue-600 text-white px-6 py-3 flex-shrink-0">
+                <div className="bg-[#8E1616] text-white px-6 py-3 flex-shrink-0">
                   <h2 className="text-lg font-semibold">Group Chat</h2>
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <GroupChat groupId={selectedGroup._id} currentUser={user?._id} />
+                  <GroupChat groupId={selectedGroup._id} currentUser={user?._id || user?.id} />
                 </div>
               </div>
             </>
@@ -450,6 +481,159 @@ const Group = () => {
         onClose={() => setIsModalOpen(false)}
         onGroupCreated={handleGroupCreated}
       />
+
+      {/* Group Search Modal */}
+      {isSearchModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setIsSearchModalOpen(false)}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">Search Groups</h2>
+              <button onClick={() => setIsSearchModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* Search Input */}
+              <input
+                type="text"
+                placeholder="Search by group name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              
+              {/* Filters */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <select
+                  value={searchDistrict}
+                  onChange={(e) => {
+                    setSearchDistrict(e.target.value);
+                    setSearchUpazila('');
+                  }}
+                  className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Districts</option>
+                  {[...areaData].sort((a, b) => a.district.localeCompare(b.district)).map((area) => (
+                    <option key={area.district} value={area.district}>{area.district}</option>
+                  ))}
+                </select>
+                
+                <select
+                  value={searchUpazila}
+                  onChange={(e) => setSearchUpazila(e.target.value)}
+                  disabled={!searchDistrict}
+                  className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                >
+                  <option value="">All Upazilas</option>
+                  {searchDistrict && areaData.find(a => a.district === searchDistrict)?.upazilas.sort().map((upazila) => (
+                    <option key={upazila} value={upazila}>{upazila}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Search Results */}
+              <div className="space-y-2">
+                {[...nearbyGroups, ...joinedGroups]
+                  .filter(g => {
+                    const matchesName = !searchQuery || g.name.toLowerCase().includes(searchQuery.toLowerCase());
+                    const matchesDistrict = !searchDistrict || g.district === searchDistrict;
+                    const matchesUpazila = !searchUpazila || g.thanaUpazila === searchUpazila;
+                    return matchesName && matchesDistrict && matchesUpazila;
+                  })
+                  .map(group => {
+                    const isJoined = joinedGroups.some(jg => jg._id === group._id);
+                    return (
+                      <div key={group._id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-800">{group.name}</h3>
+                            <p className="text-sm text-gray-600 mt-1">{group.description}</p>
+                            <p className="text-xs text-gray-500 mt-2">
+                              📍 {group.district}, {group.thanaUpazila} • {group.members?.filter(m => m.status === 'accepted').length || 0} members
+                            </p>
+                          </div>
+                          {isJoined ? (
+                            <button
+                              onClick={() => {
+                                setSelectedGroup(group);
+                                setIsSearchModalOpen(false);
+                              }}
+                              className="ml-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                            >
+                              View
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleJoinGroup(group._id)}
+                              className="ml-3 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+                            >
+                              Join
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Member List Modal */}
+      {isMemberListOpen && selectedGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setIsMemberListOpen(false)}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">
+                Members of {selectedGroup.name}
+              </h2>
+              <button onClick={() => setIsMemberListOpen(false)} className="text-gray-500 hover:text-gray-700">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="space-y-2">
+                {selectedGroup.members?.filter(m => m.status === 'accepted').map((member) => {
+                  const memberId = member.userId?._id || member.userId;
+                  const memberName = member.userId?.name || member.userId?.email || 'Unknown User';
+                  const memberType = member.userType === 'Police' ? 'police' : 'citizen';
+                  const profileUrl = `/view-profile/${memberType}/${memberId}`;
+                  
+                  return (
+                    <a
+                      key={memberId}
+                      href={profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                    >
+                      <div className="w-10 h-10 bg-[#8E1616] text-white rounded-full flex items-center justify-center font-bold">
+                        {memberName[0]?.toUpperCase() || '?'}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-800">{memberName}</div>
+                        <div className="text-xs text-gray-500">
+                          {memberType === 'police' ? '👮 Police Officer' : '👤 Citizen'}
+                        </div>
+                      </div>
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

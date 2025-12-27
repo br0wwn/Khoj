@@ -11,12 +11,16 @@ const GroupChat = ({ groupId, currentUser }) => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const previousMessagesLength = useRef(0);
+  const isInitialLoad = useRef(true);
 
   const loadMessages = useCallback(async () => {
     try {
       setError(null);
       const response = await chatService.getGroupMessages(groupId);
       if (response.success) {
+        console.log('Current User ID:', currentUser);
+        console.log('Sample message senderId:', response.data[0]?.senderId);
         setMessages(response.data);
       }
     } catch (err) {
@@ -27,7 +31,7 @@ const GroupChat = ({ groupId, currentUser }) => {
     } finally {
       setLoading(false);
     }
-  }, [groupId, loading]);
+  }, [groupId, loading, currentUser]);
 
   // Load messages on mount
   useEffect(() => {
@@ -37,9 +41,17 @@ const GroupChat = ({ groupId, currentUser }) => {
     return () => clearInterval(interval);
   }, [groupId, loadMessages]);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom only when new messages arrive (not on initial load)
   useEffect(() => {
-    scrollToBottom();
+    if (isInitialLoad.current) {
+      // Skip auto-scroll on initial load
+      isInitialLoad.current = false;
+      previousMessagesLength.current = messages.length;
+    } else if (messages.length > previousMessagesLength.current) {
+      // Only scroll if new messages were added
+      scrollToBottom();
+      previousMessagesLength.current = messages.length;
+    }
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -127,21 +139,27 @@ const GroupChat = ({ groupId, currentUser }) => {
             No messages yet. Start the conversation!
           </div>
         ) : (
-          messages.map((msg) => (
+          messages.map((msg) => {
+            const msgSenderId = typeof msg.senderId === 'object' ? msg.senderId?._id : msg.senderId;
+            const isCurrentUser = msgSenderId === currentUser;
+            
+            console.log('Message senderId:', msgSenderId, 'Current User:', currentUser, 'Match:', isCurrentUser);
+            
+            return (
             <div
               key={msg._id}
               className={`flex ${
-                msg.senderId === currentUser ? 'justify-end' : 'justify-start'
+                isCurrentUser ? 'justify-end' : 'justify-start'
               }`}
             >
               <div
                 className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  msg.senderId === currentUser
-                    ? 'bg-blue-500 text-white'
+                  isCurrentUser
+                    ? 'bg-[#8E1616] text-white'
                     : 'bg-gray-200 text-gray-800'
                 }`}
               >
-                {msg.senderId !== currentUser && (
+                {!isCurrentUser && (
                   <div className="text-sm font-semibold opacity-75">
                     {msg.senderName}
                   </div>
@@ -173,8 +191,8 @@ const GroupChat = ({ groupId, currentUser }) => {
 
                 <div
                   className={`text-xs mt-1 ${
-                    msg.senderId === currentUser
-                      ? 'text-blue-100'
+                    isCurrentUser
+                      ? 'text-red-100'
                       : 'text-gray-500'
                   }`}
                 >
@@ -185,7 +203,8 @@ const GroupChat = ({ groupId, currentUser }) => {
                 </div>
               </div>
             </div>
-          ))
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>

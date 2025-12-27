@@ -13,18 +13,24 @@ exports.createGroupWithInvites = async (req, res) => {
     }
 
     // Initialize members array with creator (accepted)
+    const creatorUserType = req.session.userType === 'police' ? 'Police' : 'User';
     const members = [{
       userId: creatorId,
+      userType: creatorUserType,
       status: 'accepted',
       joinedAt: new Date()
     }];
 
     // Add invited users with 'invited' status
     if (invitedUserIds && Array.isArray(invitedUserIds)) {
+      const Police = require('../models/police');
       for (const userId of invitedUserIds) {
         if (userId !== creatorId) { // Don't invite yourself
+          // Check if user is Police or User
+          const isPolice = await Police.findById(userId);
           members.push({
             userId,
+            userType: isPolice ? 'Police' : 'User',
             status: 'invited',
             joinedAt: new Date()
           });
@@ -86,8 +92,12 @@ exports.acceptInvitation = async (req, res) => {
       return res.json({ success: true, message: 'Already accepted', data: group });
     }
 
-    // Update member status
+    // Update member status and ensure userType is set
     group.members[memberIdx].status = 'accepted';
+    if (!group.members[memberIdx].userType) {
+      const userType = req.session.userType === 'police' ? 'Police' : 'User';
+      group.members[memberIdx].userType = userType;
+    }
     await group.save();
 
     // Update grpNotification status to mark as actioned
@@ -155,8 +165,10 @@ exports.joinGroup = async (req, res) => {
     }
 
     // Add user to group with accepted status
+    const userType = req.session.userType === 'police' ? 'Police' : 'User';
     group.members.push({
       userId,
+      userType: userType,
       status: 'accepted',
       joinedAt: new Date()
     });
@@ -195,7 +207,10 @@ exports.getUserGroups = async (req, res) => {
     // Find all groups where user has a member entry with status 'accepted'
     const groups = await Group.find(
       { members: { $elemMatch: { userId: userId, status: 'accepted' } } }
-    ).populate('createdBy', 'name email').lean();
+    )
+    .populate('createdBy', 'name email')
+    .populate('members.userId', 'name email')
+    .lean();
 
     res.json({ success: true, data: groups });
   } catch (error) {
