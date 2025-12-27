@@ -427,6 +427,7 @@ const Report = () => {
                       showActions={true}
                       onDelete={handleDeleteReport}
                       onClick={() => handleReportClick(report)}
+                      currentUser={user}
                     />
                   ))}
                 </div>
@@ -449,6 +450,7 @@ const Report = () => {
                       variant={viewMode}
                       showActions={false}
                       onClick={() => handleReportClick(report)}
+                      currentUser={user}
                     />
                   ))}
                 </div>

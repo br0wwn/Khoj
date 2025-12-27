@@ -73,6 +73,175 @@ router.get('/list', requireAdminAuth, async (req, res) => {
   }
 });
 
+// Update admin settings (admin only)
+// PUT /api/admin/settings
+router.put('/settings', requireAdminAuth, async (req, res) => {
+  try {
+    const Admin = require('../models/Admin');
+    const { emailNotifications } = req.body;
+    
+    const admin = await Admin.findById(req.admin._id);
+    
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+    
+    // Update settings
+    if (typeof emailNotifications !== 'undefined') {
+      admin.emailNotifications = emailNotifications;
+    }
+    
+    await admin.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Settings updated successfully',
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        emailNotifications: admin.emailNotifications
+      }
+    });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating settings',
+      error: error.message
+    });
+  }
+});
+
+// Get all approved admin emails (admin only)
+// GET /api/admin/approved-admins
+router.get('/approved-admins', requireAdminAuth, async (req, res) => {
+  try {
+    const ApprovedAdmin = require('../models/ApprovedAdmin');
+    const approvedAdmins = await ApprovedAdmin.find().sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Approved admin emails fetched successfully',
+      count: approvedAdmins.length,
+      data: approvedAdmins
+    });
+  } catch (error) {
+    console.error('Error fetching approved admins:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching approved admins',
+      error: error.message
+    });
+  }
+});
+
+// Add approved admin email (admin only)
+// POST /api/admin/approved-admins
+router.post('/approved-admins', requireAdminAuth, async (req, res) => {
+  try {
+    const { email } = req.body;
+    const ApprovedAdmin = require('../models/ApprovedAdmin');
+    const Admin = require('../models/Admin');
+    const emailService = require('../services/emailService');
+
+    // Validate email
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    // Check if email already exists in approved list
+    const existingApproved = await ApprovedAdmin.findOne({ email: email.toLowerCase() });
+    if (existingApproved) {
+      return res.status(400).json({
+        success: false,
+        message: 'This email is already in the approved admins list'
+      });
+    }
+
+    // Check if email already has an admin account
+    const existingAdmin = await Admin.findOne({ email: email.toLowerCase() });
+    if (existingAdmin) {
+      return res.status(400).json({
+        success: false,
+        message: 'An admin account with this email already exists'
+      });
+    }
+
+    // Create approved admin entry
+    const approvedAdmin = await ApprovedAdmin.create({
+      email: email.toLowerCase(),
+      addedBy: req.admin._id,
+      addedByName: req.admin.name
+    });
+
+    // Send email notification
+    try {
+      await emailService.sendAdminApprovalEmail(email, req.admin.name);
+    } catch (emailError) {
+      console.error('Error sending approval email:', emailError);
+      // Don't fail the request if email fails
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Email added to approved admins list successfully',
+      data: approvedAdmin
+    });
+  } catch (error) {
+    console.error('Error adding approved admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error adding approved admin',
+      error: error.message
+    });
+  }
+});
+
+// Remove approved admin email (admin only)
+// DELETE /api/admin/approved-admins/:id
+router.delete('/approved-admins/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const ApprovedAdmin = require('../models/ApprovedAdmin');
+    
+    const approvedAdmin = await ApprovedAdmin.findById(req.params.id);
+    if (!approvedAdmin) {
+      return res.status(404).json({
+        success: false,
+        message: 'Approved admin email not found'
+      });
+    }
+
+    // Check if email has been used
+    if (approvedAdmin.isUsed) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot remove email that has already been used to create an admin account'
+      });
+    }
+
+    await ApprovedAdmin.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Approved admin email removed successfully'
+    });
+  } catch (error) {
+    console.error('Error removing approved admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error removing approved admin',
+      error: error.message
+    });
+  }
+});
+
 // Get all users (admin only)
 // GET /api/admin/users
 router.get('/users', requireAdminAuth, async (req, res) => {
@@ -182,7 +351,12 @@ router.get('/police/:id', requireAdminAuth, async (req, res) => {
 router.get('/users/:id/alerts', requireAdminAuth, async (req, res) => {
   try {
     const Alert = require('../models/Alert');
-    const alerts = await Alert.find({ creator: req.params.id }).sort({ createdAt: -1 });
+    const alerts = await Alert.find({ 
+      'createdBy.userId': req.params.id,
+      'createdBy.userType': 'User'
+    })
+    .populate('createdBy.userId', 'name email profilePicture')
+    .sort({ createdAt: -1 });
     
     res.json({ 
       success: true, 
@@ -205,7 +379,12 @@ router.get('/users/:id/alerts', requireAdminAuth, async (req, res) => {
 router.get('/police/:id/alerts', requireAdminAuth, async (req, res) => {
   try {
     const Alert = require('../models/Alert');
-    const alerts = await Alert.find({ creator: req.params.id }).sort({ createdAt: -1 });
+    const alerts = await Alert.find({ 
+      'createdBy.userId': req.params.id,
+      'createdBy.userType': 'Police'
+    })
+    .populate('createdBy.userId', 'name email rank station')
+    .sort({ createdAt: -1 });
     
     res.json({ 
       success: true, 

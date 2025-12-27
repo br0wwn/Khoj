@@ -2,8 +2,20 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import ReportButton from './ReportButton';
 
-const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, onClick }) => {
-
+const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, onClick, currentUser }) => {
+  const isOwnReport = () => {
+    if (!currentUser || !report.createdBy || !report.createdBy.userId) return false;
+    
+    const creatorId = typeof report.createdBy.userId === 'object'
+      ? report.createdBy.userId._id || report.createdBy.userId.id
+      : report.createdBy.userId;
+    
+    const userId = currentUser._id || currentUser.id;
+    
+    if (!userId || !creatorId) return false;
+    
+    return creatorId.toString() === userId.toString();
+  };
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -22,7 +34,7 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
           onClick={onClick}
         >
           <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
+            <div className="flex-1 pr-4">
               <div className="flex items-center gap-3 mb-2">
                 <h3 className="text-xl font-semibold text-gray-800">{report.title}</h3>
                 {!report.createdBy && (
@@ -54,19 +66,22 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
               </span>
               <span>{formatDate(report.createdAt)}</span>
             </div>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              {!isOwnReport() && <ReportButton reportid={report._id} reportModel="Report" />}
+              {showActions && !report.is_anonymous && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(report._id);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
           </div>
-          {showActions && !report.is_anonymous && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(report._id);
-              }}
-              className="ml-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
-            >
-              Delete
-            </button>
-          )}
-        </div>
         {report.media && report.media.length > 0 && (
           <div className="mt-4 flex gap-2">
             {report.media.slice(0, 3).map((item, index) => (
@@ -89,9 +104,6 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
             )}
           </div>
         )}
-      </div>
-      <div className="absolute top-6 right-6">
-        <ReportButton reportid={report._id} reportModel="Report" />
       </div>
     </div>
     );
@@ -152,22 +164,22 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
         </div>
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-500">{formatDate(report.createdAt)}</span>
-          {showActions && report.createdBy && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(report._id);
-              }}
-              className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-xs font-medium"
-            >
-              Delete
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {!isOwnReport() && <ReportButton reportid={report._id} reportModel="Report" />}
+            {showActions && report.createdBy && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(report._id);
+                }}
+                className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-xs font-medium"
+              >
+                Delete
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-    <div className="absolute top-2 right-2 z-10">
-      <ReportButton reportid={report._id} reportModel="Report" />
     </div>
   </div>
   );

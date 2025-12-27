@@ -3,6 +3,8 @@ const User = require('../models/User');
 const Police = require('../models/police');
 const Alert = require('../models/Alert');
 const Report = require('../models/Report');
+const Admin = require('../models/Admin');
+const emailService = require('../services/emailService');
 
 // @desc    Create a report to admin
 // @route   POST /api/report-to-admin
@@ -71,6 +73,83 @@ exports.createReportToAdmin = async (req, res) => {
       details,
       status: 'pending'
     });
+
+    // Send email notifications to all admins with email notifications enabled
+    try {
+      const adminsWithNotifications = await Admin.find({ 
+        emailNotifications: true 
+      }).select('name email');
+
+      if (adminsWithNotifications && adminsWithNotifications.length > 0) {
+        console.log(`📧 Sending report notification to ${adminsWithNotifications.length} admin(s) with notifications enabled`);
+        
+        // Get reporter information from session
+        let reporterName = 'User';
+        let reporterEmail = null;
+        
+        if (req.userId && req.userType) {
+          try {
+            if (req.userType === 'user') {
+              const reporter = await User.findById(req.userId).select('name email');
+              if (reporter) {
+                reporterName = reporter.name;
+                reporterEmail = reporter.email;
+              }
+            } else if (req.userType === 'police') {
+              const reporter = await Police.findById(req.userId).select('name email');
+              if (reporter) {
+                reporterName = reporter.name;
+                reporterEmail = reporter.email;
+              }
+            }
+          } catch (userError) {
+            console.error('Error fetching reporter info:', userError);
+          }
+        }
+        
+        // Prepare report data for email
+        const reportData = {
+          type: category,
+          status: 'pending',
+          description: `New ${reportModel} report submitted`,
+          details: details || 'No additional details provided',
+          createdAt: reportToAdmin.createdAt,
+          reportedBy: {
+            name: reporterName,
+            email: reporterEmail
+          }
+        };
+
+        // Send email to each admin (await to ensure emails are sent)
+        const emailPromises = adminsWithNotifications.map(admin => 
+          emailService.sendReportToAdminEmail(admin.email, admin.name, reportData)
+            .then(result => {
+              if (result.success) {
+                console.log(`✅ Email sent successfully to ${admin.email}`);
+              } else {
+                console.error(`❌ Failed to send email to ${admin.email}:`, result.error);
+              }
+              return result;
+            })
+            .catch(error => {
+              console.error(`❌ Error sending email to ${admin.email}:`, error);
+              return { success: false, error };
+            })
+        );
+        
+        // Wait for all emails to be sent (but don't block the response)
+        Promise.all(emailPromises).then(() => {
+          console.log('📧 All notification emails processed');
+        }).catch(error => {
+          console.error('❌ Error processing notification emails:', error);
+        });
+      } else {
+        console.log('⚠️ No admins with email notifications enabled');
+      }
+    } catch (emailError) {
+      console.error('❌ Error sending admin notification emails:', emailError);
+      // Don't fail the request if email notifications fail
+    }
 
     res.status(201).json({
       success: true,

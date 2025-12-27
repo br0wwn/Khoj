@@ -147,8 +147,8 @@ const ViewProfile = () => {
       await reportToAdminService.createReport({
         reportid: profile._id || profile.id,
         reportModel: type === 'police' ? 'Police' : 'User',
-        reason: reportReason,
-        description: reportDescription
+        category: reportReason,
+        details: reportDescription
       });
       
       alert('Report submitted successfully. Our admin team will review it.');

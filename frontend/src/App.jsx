@@ -17,6 +17,7 @@ import Signup from './pages/Signup.jsx';
 import AlertDetails from './pages/AlertDetails.jsx';
 import Search from './pages/Search.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
+import AdminSignup from './pages/admin/AdminSignup.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminUsersPage from './pages/admin/AdminUsersPage.jsx';
 import AdminReportsPage from './pages/admin/AdminReportsPage.jsx';
@@ -41,6 +42,7 @@ function App() {
             <Routes>
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/signup" element={<AdminSignup />} />
               <Route 
                 path="/admin/dashboard" 
                 element={

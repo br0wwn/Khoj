@@ -31,6 +31,25 @@ exports.signup = async (req, res) => {
       });
     }
 
+    // Check if email is in the approved admins list
+    const ApprovedAdmin = require('../models/ApprovedAdmin');
+    const approvedEmail = await ApprovedAdmin.findOne({ email: email.toLowerCase() });
+    
+    if (!approvedEmail) {
+      return res.status(403).json({
+        success: false,
+        message: 'This email is not approved for admin registration. Please contact an existing administrator.'
+      });
+    }
+
+    // Check if email has already been used
+    if (approvedEmail.isUsed) {
+      return res.status(400).json({
+        success: false,
+        message: 'This email has already been used to create an admin account'
+      });
+    }
+
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
@@ -50,6 +69,11 @@ exports.signup = async (req, res) => {
       referredBy
     });
 
+    // Mark the approved email as used
+    approvedEmail.isUsed = true;
+    approvedEmail.usedAt = new Date();
+    await approvedEmail.save();
+
     // Generate JWT token
     const token = generateToken(admin._id);
 
@@ -63,6 +87,7 @@ exports.signup = async (req, res) => {
         phoneNumber: admin.phoneNumber,
         dateOfBirth: admin.dateOfBirth,
         referredBy: admin.referredBy,
+        emailNotifications: admin.emailNotifications,
         createdAt: admin.createdAt
       },
       token
@@ -122,6 +147,7 @@ exports.login = async (req, res) => {
         phoneNumber: admin.phoneNumber,
         dateOfBirth: admin.dateOfBirth,
         referredBy: admin.referredBy,
+        emailNotifications: admin.emailNotifications,
         createdAt: admin.createdAt
       },
       token
@@ -159,6 +185,7 @@ exports.getCurrentAdmin = async (req, res) => {
         phoneNumber: admin.phoneNumber,
         dateOfBirth: admin.dateOfBirth,
         referredBy: admin.referredBy,
+        emailNotifications: admin.emailNotifications,
         createdAt: admin.createdAt
       }
     });

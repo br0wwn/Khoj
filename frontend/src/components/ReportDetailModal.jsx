@@ -22,13 +22,17 @@ const ReportDetailModal = ({ report, isOpen, onClose, onReportUpdated, onReportD
   };
 
   const isOwner = () => {
-    if (!user || !report.createdBy) return false;
+    if (!user || !report.createdBy || !report.createdBy.userId) return false;
     
-    if (report.createdBy.userId) {
-      return report.createdBy.userId._id === user._id || report.createdBy.userId === user._id;
-    }
+    const creatorId = typeof report.createdBy.userId === 'object'
+      ? report.createdBy.userId._id || report.createdBy.userId.id
+      : report.createdBy.userId;
     
-    return false;
+    const userId = user._id || user.id;
+    
+    if (!userId || !creatorId) return false;
+    
+    return creatorId.toString() === userId.toString();
   };
 
   const handleEditComplete = (updatedReport) => {

@@ -38,6 +38,10 @@ const adminSchema = new mongoose.Schema({
     required: [true, 'Referred by is required'],
     trim: true
   },
+  emailNotifications: {
+    type: Boolean,
+    default: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
