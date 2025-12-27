@@ -34,7 +34,7 @@ export const SocketProvider = ({ children }) => {
         // Create socket connection
         const socketUrl = process.env.REACT_APP_SOCKET_URL;
         if (!socketUrl) {
-          console.error('REACT_APP_SOCKET_URL is not configured');
+          console.warn('REACT_APP_SOCKET_URL is not configured. Socket features will be disabled.');
           return;
         }
         const newSocket = io(socketUrl, {

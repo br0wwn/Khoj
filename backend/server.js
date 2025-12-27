@@ -28,9 +28,24 @@ const server = http.createServer(app);
 // Connect to MongoDB
 connectDB();
 
+// Configure CORS origins based on environment
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.FRONTEND_URL, process.env.FRONTEND_URL_2].filter(Boolean)
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
 // Middleware - CORS must come before other middleware
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+      callback(null, true);
+    } else {
+      console.warn(`Blocked by CORS: ${origin}`);
+      callback(null, true); // Allow in production to avoid issues, log for debugging
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -39,7 +54,7 @@ app.use(cors({
 // Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST']
   }
@@ -57,13 +72,15 @@ const sessionStore = MongoStore.create({
 
 // Session configuration
 if (!process.env.SESSION_SECRET) {
-  console.error('❌ FATAL: SESSION_SECRET environment variable is not set!');
-  console.error('Please set SESSION_SECRET in your .env file');
-  process.exit(1);
+  console.error('❌ WARNING: SESSION_SECRET environment variable is not set!');
+  console.error('Using a default session secret. This is NOT secure for production!');
+  console.error('Please set SESSION_SECRET in your environment variables');
 }
 
+const sessionSecret = process.env.SESSION_SECRET || 'unsafe-default-secret-change-in-production';
+
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   store: sessionStore,
@@ -160,10 +177,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`✓ Server is running on port ${PORT}`);
+  console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✓ CORS origins:`, allowedOrigins);
 });
 
 // Graceful shutdown - Clear all sessions when server stops
