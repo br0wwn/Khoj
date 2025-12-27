@@ -19,7 +19,7 @@ const AdminViewAlertPage = () => {
         setAlert(response.data.data);
       } catch (error) {
         console.error('Error fetching alert:', error);
-        alert('Failed to load alert');
+        window.alert('Failed to load alert');
         navigate('/admin/alerts');
       } finally {
         setLoading(false);
@@ -39,22 +39,22 @@ const AdminViewAlertPage = () => {
 
     try {
       await adminApi.delete(`/api/admin/alerts/${id}`);
-      alert('Alert deleted successfully');
+      window.alert('Alert deleted successfully');
       navigate('/admin/alerts');
     } catch (error) {
       console.error('Error deleting alert:', error);
-      alert(error.response?.data?.message || 'Failed to delete alert');
+      window.alert(error.response?.data?.message || 'Failed to delete alert');
     }
   };
 
   const handleStatusChange = async (newStatus) => {
     try {
-      await adminApi.put(`/api/alerts/${id}`, { status: newStatus });
-      alert('Alert status updated successfully');
+      await adminApi.put(`/api/admin/alerts/${id}`, { status: newStatus });
+      window.alert('Alert status updated successfully');
       setAlert({ ...alert, status: newStatus });
     } catch (error) {
       console.error('Error updating status:', error);
-      alert(error.response?.data?.message || 'Failed to update status');
+      window.alert(error.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -100,12 +100,12 @@ const AdminViewAlertPage = () => {
                 className={`px-3 py-1 rounded text-sm font-medium border cursor-pointer ${
                   alert.status === 'active' ? 'bg-green-100 text-green-800 border-green-300' :
                   alert.status === 'resolved' ? 'bg-gray-100 text-gray-800 border-gray-300' :
-                  'bg-yellow-100 text-yellow-800 border-yellow-300'
+                  'bg-blue-100 text-blue-800 border-blue-300'
                 }`}
               >
                 <option value="active">Active</option>
                 <option value="resolved">Resolved</option>
-                <option value="investigating">Investigating</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
             <div className="flex flex-col gap-1 text-gray-600 text-sm">

@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../config/apiConfig';
 
 // Create admin axios instance
 const adminApi = axios.create({
-  baseURL: API_BASE_URL || 'http://localhost:5001',
+  baseURL: API_BASE_URL,
 });
 
 // Add request interceptor to include token

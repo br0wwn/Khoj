@@ -34,22 +34,22 @@ const AdminAlertsPage = () => {
 
     try {
       await adminApi.delete(`/api/admin/alerts/${alertId}`);
-      alert('Alert deleted successfully');
+      window.alert('Alert deleted successfully');
       fetchAlerts();
     } catch (error) {
       console.error('Error deleting alert:', error);
-      alert(error.response?.data?.message || 'Failed to delete alert');
+      window.alert(error.response?.data?.message || 'Failed to delete alert');
     }
   };
 
   const handleStatusChange = async (alertId, newStatus) => {
     try {
-      await adminApi.put(`/api/alerts/${alertId}`, { status: newStatus });
-      alert('Alert status updated successfully');
+      await adminApi.put(`/api/admin/alerts/${alertId}`, { status: newStatus });
+      window.alert('Alert status updated successfully');
       fetchAlerts();
     } catch (error) {
       console.error('Error updating status:', error);
-      alert(error.response?.data?.message || 'Failed to update status');
+      window.alert(error.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -85,7 +85,7 @@ const AdminAlertsPage = () => {
               <option value="">All Status</option>
               <option value="active">Active</option>
               <option value="resolved">Resolved</option>
-              <option value="investigating">Investigating</option>
+              <option value="archived">Archived</option>
             </select>
             <span className="text-gray-600 whitespace-nowrap">{filteredAlerts.length} alerts</span>
           </div>
@@ -122,12 +122,12 @@ const AdminAlertsPage = () => {
                           className={`px-2 py-1 rounded text-sm border ${
                             alert.status === 'active' ? 'bg-green-100 text-green-800 border-green-300' :
                             alert.status === 'resolved' ? 'bg-gray-100 text-gray-800 border-gray-300' :
-                            'bg-yellow-100 text-yellow-800 border-yellow-300'
+                            'bg-blue-100 text-blue-800 border-blue-300'
                           }`}
                         >
                           <option value="active">Active</option>
                           <option value="resolved">Resolved</option>
-                          <option value="investigating">Investigating</option>
+                          <option value="archived">Archived</option>
                         </select>
                       </td>
                       <td className="py-3 px-4">

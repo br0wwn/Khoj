@@ -56,8 +56,14 @@ const sessionStore = MongoStore.create({
 });
 
 // Session configuration
+if (!process.env.SESSION_SECRET) {
+  console.error('❌ FATAL: SESSION_SECRET environment variable is not set!');
+  console.error('Please set SESSION_SECRET in your .env file');
+  process.exit(1);
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   store: sessionStore,

@@ -32,7 +32,11 @@ export const SocketProvider = ({ children }) => {
         const userId = user.id;
 
         // Create socket connection
-        const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001';
+        const socketUrl = process.env.REACT_APP_SOCKET_URL;
+        if (!socketUrl) {
+          console.error('REACT_APP_SOCKET_URL is not configured');
+          return;
+        }
         const newSocket = io(socketUrl, {
             withCredentials: true,
             transports: ['websocket', 'polling']

@@ -21,7 +21,10 @@ exports.requireAdminAuth = async (req, res, next) => {
 
     try {
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-here');
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not configured');
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Check if the role is admin
       if (decoded.role !== 'admin') {
@@ -78,7 +81,10 @@ exports.requireAdminGuest = (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-here');
+      if (!process.env.JWT_SECRET) {
+        return next();
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       if (decoded.role === 'admin') {
         return res.status(400).json({
           success: false,

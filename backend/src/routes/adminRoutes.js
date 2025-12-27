@@ -716,6 +716,51 @@ router.delete('/police/:id', requireAdminAuth, async (req, res) => {
   }
 });
 
+// Update Alert Status (admin only)
+// PUT /api/admin/alerts/:id
+router.put('/alerts/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const Alert = require('../models/Alert');
+    const { status } = req.body;
+
+    // Validate status
+    const allowedStatuses = ['active', 'resolved', 'archived'];
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be: active, resolved, or archived'
+      });
+    }
+
+    // Find and update alert
+    const alert = await Alert.findById(req.params.id);
+    
+    if (!alert) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Alert not found' 
+      });
+    }
+
+    // Update status
+    alert.status = status;
+    await alert.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Alert status updated successfully',
+      data: alert
+    });
+  } catch (error) {
+    console.error('Error updating alert status:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating alert status',
+      error: error.message 
+    });
+  }
+});
+
 // Delete Alert (admin only)
 // DELETE /api/admin/alerts/:id
 router.delete('/alerts/:id', requireAdminAuth, async (req, res) => {
