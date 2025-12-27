@@ -318,3 +318,43 @@ exports.toggleInAppNotifications = async (req, res) => {
     });
   }
 };
+
+// @desc    Toggle sound notifications
+// @route   PUT /api/profile/sound-notifications
+// @access  Private
+exports.toggleSoundNotifications = async (req, res) => {
+  try {
+    const { soundNotifications } = req.body;
+    const userId = req.session.userId;
+
+    if (typeof soundNotifications !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'soundNotifications must be a boolean value'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.soundNotifications = soundNotifications;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Sound notifications ${soundNotifications ? 'enabled' : 'disabled'} successfully`,
+      soundNotifications: user.soundNotifications
+    });
+  } catch (error) {
+    console.error('Toggle sound notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating sound notification settings'
+    });
+  }
+};

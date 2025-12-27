@@ -5,6 +5,7 @@ import { useUserColors } from '../hooks/useUserColors';
 import alertService from '../services/alertService';
 import AlertCard from '../components/AlertCard';
 import CreateAlertModal from '../components/CreateAlertModal';
+import { AlertCardSkeleton } from '../components/SkeletonLoader';
 import areaData from '../data/area.json';
 
 const Feed = () => {
@@ -106,10 +107,10 @@ const Feed = () => {
       filtered.sort((a, b) => {
         const aIsOwn = user && a.createdBy?.userId === user.id;
         const bIsOwn = user && b.createdBy?.userId === user.id;
-        
+
         if (aIsOwn && !bIsOwn) return -1;
         if (!aIsOwn && bIsOwn) return 1;
-        
+
         // If both are own or both are not own, sort by date (newest first)
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
@@ -180,8 +181,8 @@ const Feed = () => {
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-4 py-2 rounded-md transition-colors ${statusFilter === 'all'
-                ? `${colors.bg} text-white`
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? `${colors.bg} text-white`
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
           >
             All
@@ -189,8 +190,8 @@ const Feed = () => {
           <button
             onClick={() => setStatusFilter('active')}
             className={`px-4 py-2 rounded-md transition-colors ${statusFilter === 'active'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-green-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
           >
             Active
@@ -198,8 +199,8 @@ const Feed = () => {
           <button
             onClick={() => setStatusFilter('resolved')}
             className={`px-4 py-2 rounded-md transition-colors ${statusFilter === 'resolved'
-                ? `${colors.bg} text-white`
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? `${colors.bg} text-white`
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
           >
             Resolved

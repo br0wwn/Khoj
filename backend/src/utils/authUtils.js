@@ -23,13 +23,13 @@ exports.destroySession = (req, res) => {
   return new Promise((resolve, reject) => {
     // Get session ID before destroying
     const sessionId = req.sessionID;
-    
+
     req.session.destroy((err) => {
       if (err) {
         console.error('Error destroying session:', err);
         return reject(err);
       }
-      
+
       // Clear the session cookie
       res.clearCookie('connect.sid', {
         path: '/',
@@ -37,7 +37,7 @@ exports.destroySession = (req, res) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
       });
-      
+
       console.log(`Session ${sessionId} destroyed and removed from database`);
       resolve();
     });
@@ -52,14 +52,14 @@ exports.destroySession = (req, res) => {
  */
 exports.validateRequiredFields = (fields, requiredFields) => {
   const missingFields = requiredFields.filter(field => !fields[field]);
-  
+
   if (missingFields.length > 0) {
     return {
       isValid: false,
       message: `Please provide all required fields: ${missingFields.join(', ')}`
     };
   }
-  
+
   return { isValid: true };
 };
 
@@ -75,14 +75,14 @@ exports.validatePassword = (password) => {
       message: 'Password is required'
     };
   }
-  
+
   if (password.length < 6) {
     return {
       isValid: false,
       message: 'Password must be at least 6 characters long'
     };
   }
-  
+
   return { isValid: true };
 };
 
@@ -98,7 +98,7 @@ exports.validateEmail = (email) => {
       message: 'Email is required'
     };
   }
-  
+
   const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
   if (!emailRegex.test(email)) {
     return {
@@ -106,7 +106,7 @@ exports.validateEmail = (email) => {
       message: 'Please enter a valid email address'
     };
   }
-  
+
   return { isValid: true };
 };
 
@@ -123,7 +123,7 @@ exports.validateLoginCredentials = (email, password) => {
       message: 'Please provide email and password'
     };
   }
-  
+
   return { isValid: true };
 };
 
@@ -150,10 +150,13 @@ exports.formatUserResponse = (user, userType = 'citizen') => {
       joiningDate: user.joiningDate,
       profilePicture: user.profilePicture,
       verified: user.verified,
+      emailNotifications: user.emailNotifications,
+      inAppNotifications: user.inAppNotifications,
+      soundNotifications: user.soundNotifications,
       createdAt: user.createdAt
     };
   }
-  
+
   // Citizen user
   return {
     id: user._id,
@@ -162,6 +165,9 @@ exports.formatUserResponse = (user, userType = 'citizen') => {
     dateOfBirth: user.dateOfBirth,
     bio: user.bio,
     profilePicture: user.profilePicture,
+    emailNotifications: user.emailNotifications,
+    inAppNotifications: user.inAppNotifications,
+    soundNotifications: user.soundNotifications,
     createdAt: user.createdAt
   };
 };
@@ -177,7 +183,7 @@ exports.sendErrorResponse = (res, statusCode, message, error = null) => {
   if (error) {
     console.error(`Error: ${message}`, error);
   }
-  
+
   res.status(statusCode).json({
     success: false,
     message

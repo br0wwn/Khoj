@@ -337,3 +337,42 @@ exports.toggleInAppNotifications = async (req, res) => {
         });
     }
 };
+// @desc    Toggle sound notifications for police
+// @route   PUT /api/profile/police/sound-notifications
+// @access  Private
+exports.toggleSoundNotifications = async (req, res) => {
+    try {
+        const { soundNotifications } = req.body;
+        const policeId = req.session.userId;
+
+        if (typeof soundNotifications !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: 'soundNotifications must be a boolean value'
+            });
+        }
+
+        const police = await Police.findById(policeId);
+        if (!police) {
+            return res.status(404).json({
+                success: false,
+                message: 'Police officer not found'
+            });
+        }
+
+        police.soundNotifications = soundNotifications;
+        await police.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Sound notifications ${soundNotifications ? 'enabled' : 'disabled'} successfully`,
+            soundNotifications: police.soundNotifications
+        });
+    } catch (error) {
+        console.error('Toggle sound notifications error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating sound notification settings'
+        });
+    }
+};

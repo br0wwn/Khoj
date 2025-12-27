@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { getMessages, sendMessage, markAsRead } from '../services/chatService';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { Skeleton } from '../components/SkeletonLoader';
 
 const ChatWindow = () => {
     const { chatId: conversationId } = useParams();
@@ -203,19 +204,32 @@ const ChatWindow = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-xl">Loading messages...</div>
+            <div className="flex flex-col bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 pt-16" style={{ height: '100vh' }}>
+                <div className="bg-white shadow-md px-6 py-4 flex items-center space-x-4 flex-shrink-0 border-b-2 border-blue-100 fixed top-16 left-0 right-0 z-40">
+                    <Skeleton variant="circle" className="w-12 h-12" />
+                    <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-48" />
+                    </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 mt-20">
+                    {[...Array(8)].map((_, i) => (
+                        <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+                            <Skeleton className={`h-16 ${i % 2 === 0 ? 'w-64' : 'w-56'} rounded-2xl`} />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col max-w-4xl mx-auto" style={{ height: 'calc(100vh - 4rem)', marginTop: '4rem' }}>
+        <div className="flex flex-col bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 pt-16" style={{ height: '100vh' }}>
             {/* Chat Header */}
-            <div className="bg-white border-b px-3 py-2 flex items-center space-x-3 flex-shrink-0">
+            <div className="bg-white shadow-md px-6 py-4 flex items-center space-x-4 flex-shrink-0 border-b-2 border-blue-100 fixed top-16 left-0 right-0 z-40">
                 <button
                     onClick={() => navigate('/chat')}
-                    className="text-gray-600 hover:text-gray-900"
+                    className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-all"
                 >
                     <svg
                         className="w-6 h-6"
@@ -234,21 +248,25 @@ const ChatWindow = () => {
 
                 {otherUser && (
                     <>
-                        {otherUser.profilePicture?.url ? (
-                            <img
-                                src={otherUser.profilePicture.url}
-                                alt={otherUser.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                                {otherUser.name?.charAt(0).toUpperCase()}
-                            </div>
-                        )}
+                        <div className="p-0.5 rounded-full bg-gradient-to-br from-blue-500 to-green-500">
+                            {otherUser.profilePicture?.url ? (
+                                <img
+                                    src={otherUser.profilePicture.url}
+                                    alt={otherUser.name}
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-white"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center text-white font-bold text-lg">
+                                    {otherUser.name?.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                        </div>
                         <div className="flex-1">
-                            <h2 className="font-semibold text-gray-900">{otherUser.name}</h2>
+                            <h2 className="font-bold text-gray-900 text-lg">{otherUser.name}</h2>
                             {alert && (
-                                <p className="text-xs text-gray-500">Re: {alert.title}</p>
+                                <p className="text-sm text-gray-600 flex items-center gap-1">
+                                    <span className="text-red-500">🚨</span> {alert.title}
+                                </p>
                             )}
                         </div>
                     </>
@@ -256,15 +274,15 @@ const ChatWindow = () => {
             </div>
 
             {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 mt-20" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0)', backgroundSize: '40px 40px' }}>
                 {messages.map((message, index) => {
                     // Safely handle sender data that might be null or incomplete
                     const senderId = message.sender?.userId?._id || message.sender?.userId;
                     const senderName = message.sender?.userId?.name || 'Unknown';
                     const senderPicture = message.sender?.userId?.profilePicture?.url;
-                    
+
                     if (!senderId) return null; // Skip messages with no sender data
-                    
+
                     const isOwnMessage = String(senderId) === String(user?.id);
                     const showAvatar =
                         index === 0 ||
@@ -323,9 +341,9 @@ const ChatWindow = () => {
                                     {/* Display text if present - inside the bubble */}
                                     {message.messageText && (
                                         <div
-                                            className={`rounded-lg px-4 py-2 ${isOwnMessage
-                                                ? 'bg-green-600 text-white'
-                                                : 'bg-white text-gray-900 border'
+                                            className={`rounded-2xl px-5 py-3 shadow-sm ${isOwnMessage
+                                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                                                : 'bg-white text-gray-900 border border-gray-200'
                                                 }`}
                                         >
                                             <p className="text-sm whitespace-pre-wrap break-words">
@@ -384,7 +402,7 @@ const ChatWindow = () => {
             </div>
 
             {/* Message Input */}
-            <div className="bg-white border-t px-3 py-2 flex-shrink-0">
+            <div className="bg-white shadow-lg px-6 py-4 flex-shrink-0 border-t-2 border-blue-100">
                 {/* File Previews */}
                 {selectedFiles.length > 0 && (
                     <div className="mb-2 flex gap-2 flex-wrap">
@@ -442,7 +460,7 @@ const ChatWindow = () => {
                     <button
                         type="submit"
                         disabled={(!newMessage.trim() && selectedFiles.length === 0) || sending}
-                        className="bg-green-600 text-white rounded-full p-2 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full p-3 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
                     >
                         <svg
                             className="w-6 h-6"

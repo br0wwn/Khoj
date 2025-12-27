@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import { NotificationSkeleton } from '../components/SkeletonLoader';
 
 const Notifications = () => {
     const [notifications, setNotifications] = useState([]);
@@ -110,8 +111,15 @@ const Notifications = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-xl">Loading notifications...</div>
+            <div className="container mx-auto px-4 py-8 max-w-4xl" style={{ marginTop: '4rem' }}>
+                <div className="mb-6">
+                    <div className="h-9 w-48 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="space-y-2">
+                    {[...Array(8)].map((_, i) => (
+                        <NotificationSkeleton key={i} />
+                    ))}
+                </div>
             </div>
         );
     }

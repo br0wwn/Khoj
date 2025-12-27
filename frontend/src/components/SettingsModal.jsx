@@ -5,8 +5,10 @@ const SettingsModal = ({
     onClose,
     emailNotifications,
     inAppNotifications,
+    soundNotifications,
     onToggleEmail,
     onToggleInApp,
+    onToggleSound,
     loading
 }) => {
     if (!isOpen) return null;
@@ -67,8 +69,8 @@ const SettingsModal = ({
                                     </div>
                                     <div className="ml-11 mt-2">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${emailNotifications
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-800'
                                             }`}>
                                             {emailNotifications ? '✓ Enabled' : '✗ Disabled'}
                                         </span>
@@ -78,8 +80,8 @@ const SettingsModal = ({
                                     onClick={onToggleEmail}
                                     disabled={loading}
                                     className={`relative inline-flex h-8 w-16 flex-shrink-0 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg ${emailNotifications
-                                            ? 'bg-blue-600 focus:ring-blue-500'
-                                            : 'bg-gray-300 focus:ring-gray-400'
+                                        ? 'bg-blue-600 focus:ring-blue-500'
+                                        : 'bg-gray-300 focus:ring-gray-400'
                                         }`}
                                     title={emailNotifications ? 'Disable email notifications' : 'Enable email notifications'}
                                 >
@@ -110,8 +112,8 @@ const SettingsModal = ({
                                     </div>
                                     <div className="ml-11 mt-2">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${inAppNotifications
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-800'
                                             }`}>
                                             {inAppNotifications ? '✓ Enabled' : '✗ Disabled'}
                                         </span>
@@ -121,13 +123,56 @@ const SettingsModal = ({
                                     onClick={onToggleInApp}
                                     disabled={loading}
                                     className={`relative inline-flex h-8 w-16 flex-shrink-0 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg ${inAppNotifications
-                                            ? 'bg-purple-600 focus:ring-purple-500'
-                                            : 'bg-gray-300 focus:ring-gray-400'
+                                        ? 'bg-purple-600 focus:ring-purple-500'
+                                        : 'bg-gray-300 focus:ring-gray-400'
                                         }`}
                                     title={inAppNotifications ? 'Disable in-app notifications' : 'Enable in-app notifications'}
                                 >
                                     <span
                                         className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-300 ${inAppNotifications ? 'translate-x-9' : 'translate-x-1'
+                                            }`}
+                                    />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Sound Notifications */}
+                        <div className="p-5 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl border border-green-200">
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900">Sound Notifications</h3>
+                                            <p className="text-sm text-gray-600 mt-0.5">
+                                                Play sound when notifications arrive
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="ml-11 mt-2">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${soundNotifications
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-gray-100 text-gray-800'
+                                            }`}>
+                                            {soundNotifications ? '✓ Enabled' : '✗ Disabled'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={onToggleSound}
+                                    disabled={loading}
+                                    className={`relative inline-flex h-8 w-16 flex-shrink-0 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg ${soundNotifications
+                                            ? 'bg-green-600 focus:ring-green-500'
+                                            : 'bg-gray-300 focus:ring-gray-400'
+                                        }`}
+                                    title={soundNotifications ? 'Disable sound notifications' : 'Enable sound notifications'}
+                                >
+                                    <span
+                                        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-300 ${soundNotifications ? 'translate-x-9' : 'translate-x-1'
                                             }`}
                                     />
                                 </button>
@@ -145,6 +190,7 @@ const SettingsModal = ({
                                     <ul className="space-y-1 list-disc list-inside">
                                         <li>Email notifications are sent to your registered email address</li>
                                         <li>In-app notifications appear on the website in real-time</li>
+                                        <li>Sound alerts play when new notifications arrive</li>
                                         <li>You can customize each type independently</li>
                                     </ul>
                                 </div>

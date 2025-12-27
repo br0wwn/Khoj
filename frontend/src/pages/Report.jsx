@@ -6,11 +6,12 @@ import CreateReportModal from '../components/CreateReportModal';
 import ReportCard from '../components/ReportCard';
 import ReportDetailModal from '../components/ReportDetailModal';
 import areaData from '../data/area.json';
+import { ReportCardSkeleton } from '../components/SkeletonLoader';
 
 const Report = () => {
   const { user } = useAuth();
   const colors = useUserColors();
-  
+
   const [activeTab, setActiveTab] = useState(user ? 'my-reports' : 'feed');
   const [myReports, setMyReports] = useState([]);
   const [feedReports, setFeedReports] = useState([]);
@@ -19,7 +20,7 @@ const Report = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
-  
+
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +28,7 @@ const Report = () => {
   const [selectedUpazila, setSelectedUpazila] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [anonymousFilter, setAnonymousFilter] = useState('all');
-  
+
   const [districts] = useState(() => {
     return [...areaData].sort((a, b) => a.district.localeCompare(b.district));
   });
@@ -38,7 +39,7 @@ const Report = () => {
     try {
       setLoading(true);
       const response = await reportService.getAllReports();
-      
+
       // Extract data from response - check both response.data and response.data.data
       let reportsArray = [];
       if (response.success && response.data) {
@@ -46,30 +47,30 @@ const Report = () => {
       } else if (Array.isArray(response)) {
         reportsArray = response;
       }
-      
+
       if (user) {
         const userReportsList = reportsArray.filter(report => {
           const hasCreator = report.createdBy && report.createdBy.userId;
           if (!hasCreator) return false;
-          
+
           // Handle both populated (object) and unpopulated (string) userId
-          const creatorId = typeof report.createdBy.userId === 'object' 
+          const creatorId = typeof report.createdBy.userId === 'object'
             ? report.createdBy.userId._id || report.createdBy.userId.id
             : report.createdBy.userId;
-          
+
           // User ID can be at user._id or user.id
           const userId = user._id || user.id;
-          
+
           if (!userId || !creatorId) return false;
-          
+
           return creatorId.toString() === userId.toString();
         });
-        
+
         setMyReports(userReportsList);
       } else {
         setMyReports([]);
       }
-      
+
       setFeedReports(reportsArray);
       setFilteredReports(reportsArray);
     } catch (error) {
@@ -219,21 +220,19 @@ const Report = () => {
           <div className="flex gap-4 mb-6 border-b border-gray-200">
             <button
               onClick={() => setActiveTab('my-reports')}
-              className={`pb-3 px-4 font-medium transition-colors border-b-2 ${
-                activeTab === 'my-reports'
+              className={`pb-3 px-4 font-medium transition-colors border-b-2 ${activeTab === 'my-reports'
                   ? `${colors.text} ${colors.border}`
                   : 'text-gray-500 border-transparent hover:text-gray-700'
-              }`}
+                }`}
             >
               My Reports ({myReports.length})
             </button>
             <button
               onClick={() => setActiveTab('feed')}
-              className={`pb-3 px-4 font-medium transition-colors border-b-2 ${
-                activeTab === 'feed'
+              className={`pb-3 px-4 font-medium transition-colors border-b-2 ${activeTab === 'feed'
                   ? `${colors.text} ${colors.border}`
                   : 'text-gray-500 border-transparent hover:text-gray-700'
-              }`}
+                }`}
             >
               Report Feed ({feedReports.length})
             </button>
@@ -247,33 +246,30 @@ const Report = () => {
             <div className="flex flex-wrap gap-3 mb-4">
               <button
                 onClick={() => setAnonymousFilter('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  anonymousFilter === 'all'
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${anonymousFilter === 'all'
                     ? `${colors.bg} text-white shadow-md`
                     : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-                }`}
+                  }`}
               >
                 All
               </button>
-              
+
               <button
                 onClick={() => setAnonymousFilter('anonymous')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  anonymousFilter === 'anonymous'
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${anonymousFilter === 'anonymous'
                     ? `${colors.bg} text-white shadow-md`
                     : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-                }`}
+                  }`}
               >
                 Anonymous
               </button>
-              
+
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                  showFilters
+                className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${showFilters
                     ? `${colors.bg} text-white shadow-md`
                     : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-                }`}
+                  }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -399,8 +395,10 @@ const Report = () => {
 
         {/* Reports Grid/List */}
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+            {[...Array(6)].map((_, i) => (
+              <ReportCardSkeleton key={i} variant={viewMode} />
+            ))}
           </div>
         ) : (
           <>

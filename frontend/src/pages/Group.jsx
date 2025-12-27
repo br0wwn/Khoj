@@ -6,6 +6,7 @@ import reportService from '../services/reportService';
 import CreateGroupModal from '../components/CreateGroupModal';
 import GroupChat from '../components/GroupChat';
 import areaData from '../data/area.json';
+import { GroupCardSkeleton } from '../components/SkeletonLoader';
 
 const Group = () => {
   const { user } = useAuth();
@@ -191,8 +192,35 @@ const Group = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-[1800px] mx-auto">
+          <div className="mb-6">
+            <div className="h-9 w-64 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <GroupCardSkeleton key={i} />
+              ))}
+            </div>
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow-md p-8">
+                <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-4"></div>
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -276,11 +304,10 @@ const Group = () => {
                   <div
                     key={group._id}
                     onClick={() => setSelectedGroup(group)}
-                    className={`p-3 rounded cursor-pointer transition ${
-                      selectedGroup?._id === group._id
+                    className={`p-3 rounded cursor-pointer transition ${selectedGroup?._id === group._id
                         ? 'bg-blue-100 border-2 border-blue-500'
                         : 'bg-gray-50 hover:bg-gray-100'
-                    }`}
+                      }`}
                   >
                     <h3 className="font-medium text-sm text-gray-800">{group.name}</h3>
                     <p className="text-xs text-gray-600 mt-1">
@@ -421,9 +448,8 @@ const Group = () => {
                     <p className="text-xs text-gray-600 mt-1 line-clamp-2">{alert.description}</p>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-gray-500">{alert.location}</span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        alert.status === 'active' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                      }`}>
+                      <span className={`text-xs px-2 py-1 rounded ${alert.status === 'active' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                        }`}>
                         {alert.status}
                       </span>
                     </div>
@@ -494,7 +520,7 @@ const Group = () => {
                 </svg>
               </button>
             </div>
-            
+
             <div className="p-6">
               {/* Search Input */}
               <input
@@ -504,7 +530,7 @@ const Group = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              
+
               {/* Filters */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <select
@@ -520,7 +546,7 @@ const Group = () => {
                     <option key={area.district} value={area.district}>{area.district}</option>
                   ))}
                 </select>
-                
+
                 <select
                   value={searchUpazila}
                   onChange={(e) => setSearchUpazila(e.target.value)}
@@ -533,7 +559,7 @@ const Group = () => {
                   ))}
                 </select>
               </div>
-              
+
               {/* Search Results */}
               <div className="space-y-2">
                 {[...nearbyGroups, ...joinedGroups]
@@ -597,7 +623,7 @@ const Group = () => {
                 </svg>
               </button>
             </div>
-            
+
             <div className="p-6">
               <div className="space-y-2">
                 {selectedGroup.members?.filter(m => m.status === 'accepted').map((member) => {
@@ -605,7 +631,7 @@ const Group = () => {
                   const memberName = member.userId?.name || member.userId?.email || 'Unknown User';
                   const memberType = member.userType === 'Police' ? 'police' : 'citizen';
                   const profileUrl = `/view-profile/${memberType}/${memberId}`;
-                  
+
                   return (
                     <a
                       key={memberId}

@@ -5,6 +5,7 @@ import alertService from '../services/alertService';
 import AlertCard from '../components/AlertCard';
 import SettingsModal from '../components/SettingsModal';
 import { useUserColors } from '../hooks/useUserColors';
+import { ProfileInfoSkeleton, AlertCardSkeleton } from '../components/SkeletonLoader';
 
 const Profile = () => {
   const { user, userType, setUser } = useAuth();
@@ -19,6 +20,36 @@ const Profile = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(user?.emailNotifications ?? true);
   const [inAppNotifications, setInAppNotifications] = useState(user?.inAppNotifications ?? true);
+
+  // Date dropdowns for Date of Birth
+  const [dobDay, setDobDay] = useState('');
+  const [dobMonth, setDobMonth] = useState('');
+  const [dobYear, setDobYear] = useState('');
+
+  // Date dropdowns for Joining Date (police)
+  const [joiningDay, setJoiningDay] = useState('');
+  const [joiningMonth, setJoiningMonth] = useState('');
+  const [joiningYear, setJoiningYear] = useState('');
+
+  // Generate date options
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1924 + 1 }, (_, i) => currentYear - 13 - i);
+  const joiningYears = Array.from({ length: 50 }, (_, i) => currentYear - i);
+  const months = [
+    { value: '01', label: 'January' },
+    { value: '02', label: 'February' },
+    { value: '03', label: 'March' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'May' },
+    { value: '06', label: 'June' },
+    { value: '07', label: 'July' },
+    { value: '08', label: 'August' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' }
+  ];
+  const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -56,6 +87,58 @@ const Profile = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  // Handle Date of Birth dropdown changes
+  const handleDobChange = (field, value) => {
+    let newDay = dobDay;
+    let newMonth = dobMonth;
+    let newYear = dobYear;
+
+    if (field === 'day') {
+      newDay = value;
+      setDobDay(value);
+    } else if (field === 'month') {
+      newMonth = value;
+      setDobMonth(value);
+    } else if (field === 'year') {
+      newYear = value;
+      setDobYear(value);
+    }
+
+    if (newDay && newMonth && newYear) {
+      const dateString = `${newYear}-${newMonth}-${newDay}`;
+      setFormData({
+        ...formData,
+        dateOfBirth: dateString
+      });
+    }
+  };
+
+  // Handle Joining Date dropdown changes
+  const handleJoiningDateChange = (field, value) => {
+    let newDay = joiningDay;
+    let newMonth = joiningMonth;
+    let newYear = joiningYear;
+
+    if (field === 'day') {
+      newDay = value;
+      setJoiningDay(value);
+    } else if (field === 'month') {
+      newMonth = value;
+      setJoiningMonth(value);
+    } else if (field === 'year') {
+      newYear = value;
+      setJoiningYear(value);
+    }
+
+    if (newDay && newMonth && newYear) {
+      const dateString = `${newYear}-${newMonth}-${newDay}`;
+      setFormData({
+        ...formData,
+        joiningDate: dateString
+      });
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -489,13 +572,38 @@ const Profile = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                      <input
-                        type="date"
-                        name="dateOfBirth"
-                        value={formData.dateOfBirth}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
+                      <div className="grid grid-cols-3 gap-2">
+                        <select
+                          value={dobDay}
+                          onChange={(e) => handleDobChange('day', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Day</option>
+                          {days.map(day => (
+                            <option key={day} value={day}>{day}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={dobMonth}
+                          onChange={(e) => handleDobChange('month', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Month</option>
+                          {months.map(month => (
+                            <option key={month.value} value={month.value}>{month.label}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={dobYear}
+                          onChange={(e) => handleDobChange('year', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Year</option>
+                          {years.map(year => (
+                            <option key={year} value={year}>{year}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     {/* Conditional fields based on user type */}
@@ -564,13 +672,38 @@ const Profile = () => {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
-                          <input
-                            type="date"
-                            name="joiningDate"
-                            value={formData.joiningDate}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <select
+                              value={joiningDay}
+                              onChange={(e) => handleJoiningDateChange('day', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="">Day</option>
+                              {days.map(day => (
+                                <option key={day} value={day}>{day}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={joiningMonth}
+                              onChange={(e) => handleJoiningDateChange('month', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="">Month</option>
+                              {months.map(month => (
+                                <option key={month.value} value={month.value}>{month.label}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={joiningYear}
+                              onChange={(e) => handleJoiningDateChange('year', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="">Year</option>
+                              {joiningYears.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </>
                     ) : (
@@ -671,8 +804,10 @@ const Profile = () => {
       {activeTab === 'alerts' && (
         <div>
           {alertsLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-gray-500">Loading your alerts...</div>
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <AlertCardSkeleton key={i} variant="list" />
+              ))}
             </div>
           ) : myAlerts.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">

@@ -107,6 +107,10 @@ const policeSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    soundNotifications: {
+        type: Boolean,
+        default: true
+    },
     createdAt: {
         type: Date,
         default: Date.now

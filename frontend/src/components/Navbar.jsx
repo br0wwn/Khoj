@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getUnreadCount } from '../services/chatService';
 import { getUnreadCount as getNotificationUnreadCount } from '../services/notificationService';
@@ -13,13 +13,18 @@ const Navbar = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(user?.emailNotifications ?? true);
   const [inAppNotifications, setInAppNotifications] = useState(user?.inAppNotifications ?? true);
+  const [soundNotifications, setSoundNotifications] = useState(user?.soundNotifications ?? true);
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const { socket } = useSocket();
+
+  // Helper function to check if link is active
+  const isActive = (path) => location.pathname === path;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -40,13 +45,14 @@ const Navbar = () => {
       loadNotificationUnreadCount();
       setEmailNotifications(user?.emailNotifications ?? true);
       setInAppNotifications(user?.inAppNotifications ?? true);
+      setSoundNotifications(user?.soundNotifications ?? true);
     } else {
       // Reset counts when logged out
       setUnreadCount(0);
       setNotificationUnreadCount(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user?.emailNotifications, user?.inAppNotifications]);
+  }, [isAuthenticated, user?.emailNotifications, user?.inAppNotifications, user?.soundNotifications]);
 
   // Listen for new message notifications
   useEffect(() => {
@@ -58,6 +64,19 @@ const Navbar = () => {
 
     const handleNewNotification = () => {
       loadNotificationUnreadCount();
+
+      // Play notification sound if enabled
+      if (soundNotifications) {
+        try {
+          const audio = new Audio('/notification.mp3');
+          audio.volume = 0.5; // Set volume to 50%
+          audio.play().catch(err => {
+            console.log('Could not play notification sound:', err);
+          });
+        } catch (error) {
+          console.log('Error playing notification sound:', error);
+        }
+      }
     };
 
     const handleNotificationRead = () => {
@@ -79,7 +98,7 @@ const Navbar = () => {
       socket.off('notification-read', handleNotificationRead);
       socket.off('notifications-read-all', handleNotificationRead);
     };
-  }, [socket]);
+  }, [socket, soundNotifications]);
 
   const loadUnreadCount = async () => {
     try {
@@ -155,14 +174,44 @@ const Navbar = () => {
     }
   };
 
+  const handleToggleSoundNotifications = async () => {
+    setLoading(true);
+
+    try {
+      const endpoint = userType === 'police'
+        ? '/api/profile/police/sound-notifications'
+        : '/api/profile/sound-notifications';
+
+      const response = await axios.put(endpoint,
+        { soundNotifications: !soundNotifications },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setSoundNotifications(!soundNotifications);
+        setUser({ ...user, soundNotifications: !soundNotifications });
+      }
+    } catch (error) {
+      console.error('Failed to update sound notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <nav className={`fixed top-0 left-0 right-0 shadow-md z-50 ${userType === 'police' ? 'bg-police' : 'bg-citizen'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo/Title */}
           <div className="flex-1 flex items-center space-x-4">
-            <Link to="/" className="text-2xl font-bold text-white mr-4">
-              khoj
+            <Link to="/" className="flex items-center space-x-2 mr-4">
+              <img
+                src={`${process.env.PUBLIC_URL}/khojlogo.png`}
+                alt="Khoj Logo"
+                className="h-8 w-8 object-contain drop-shadow-lg transition-transform hover:scale-110"
+                style={{ filter: 'drop-shadow(0 4px 4px rgba(0, 0, 0, 0.5)) drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6))' }}
+              />
+              <span className="text-2xl font-bold text-white">khoj</span>
             </Link>
 
             {/* Search form (global) */}
@@ -180,7 +229,7 @@ const Navbar = () => {
                 placeholder="Search alerts..."
                 className="bg-transparent text-white placeholder-white/70 focus:outline-none w-full"
               />
-              <button type="submit" className="ml-2 text-white opacity-90 hover:opacity-100">
+              <button type="submit" className="ml-2 text-white opacity-90 hover:opacity-100 transition-all hover:scale-110">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd" />
                 </svg>
@@ -192,25 +241,29 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <Link
               to="/feed"
-              className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
+              className={`px-4 py-2 rounded-md text-white transition-colors ${isActive('/feed') ? 'bg-white/30' : 'hover:bg-white/20'
+                }`}
             >
               Alerts
             </Link>
             <Link
               to="/report"
-              className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
+              className={`px-4 py-2 rounded-md text-white transition-colors ${isActive('/report') ? 'bg-white/30' : 'hover:bg-white/20'
+                }`}
             >
               Report
             </Link>
             <Link
               to="/group"
-              className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
+              className={`px-4 py-2 rounded-md text-white transition-colors ${isActive('/group') ? 'bg-white/30' : 'hover:bg-white/20'
+                }`}
             >
               Group
             </Link>
             <Link
               to="/statistics"
-              className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
+              className={`px-4 py-2 rounded-md text-white transition-colors ${isActive('/statistics') ? 'bg-white/30' : 'hover:bg-white/20'
+                }`}
             >
               Statistics
             </Link>
@@ -219,7 +272,8 @@ const Navbar = () => {
             {isAuthenticated && (
               <Link
                 to="/notifications"
-                className="relative px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
+                className={`relative px-4 py-2 rounded-md text-white transition-colors ${isActive('/notifications') ? 'bg-white/30' : 'hover:bg-white/20'
+                  }`}
               >
                 <span className="flex items-center gap-2">
                   <svg
@@ -236,7 +290,7 @@ const Navbar = () => {
                     />
                   </svg>
                   {notificationUnreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-[pulse_1s_ease-in-out_2]">
                       {notificationUnreadCount > 9 ? '9+' : notificationUnreadCount}
                     </span>
                   )}
@@ -248,7 +302,8 @@ const Navbar = () => {
             {isAuthenticated && (
               <Link
                 to="/chat"
-                className="relative px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
+                className={`relative px-4 py-2 rounded-md text-white transition-colors ${isActive('/chat') ? 'bg-white/30' : 'hover:bg-white/20'
+                  }`}
               >
                 <span className="flex items-center gap-2">
                   <svg
@@ -265,7 +320,7 @@ const Navbar = () => {
                     />
                   </svg>
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-[pulse_1s_ease-in-out_2]">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -277,18 +332,35 @@ const Navbar = () => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors focus:outline-none"
+                className="flex items-center space-x-2 px-3 py-2 rounded-md text-white hover:bg-white/20 transition-colors focus:outline-none"
               >
-                Profile
+                {isAuthenticated ? (
+                  <>
+                    {user?.profilePicture?.url ? (
+                      <img
+                        src={user.profilePicture.url}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm border-2 border-white">
+                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
+                    <span className="font-medium">{user?.name}</span>
+                  </>
+                ) : (
+                  <span>Profile</span>
+                )}
               </button>
 
               {/* Dropdown Menu */}
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-primary rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                <div className="absolute right-0 mt-2 w-64 bg-primary rounded-md shadow-lg py-1 z-10 border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
                   {isAuthenticated ? (
                     <>
-                      <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
-                        <p className="font-semibold">{user?.name}</p>
+                      <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-200">
                         <p className="text-gray-500 text-xs truncate">{user?.email}</p>
                       </div>
                       <Link
@@ -336,8 +408,10 @@ const Navbar = () => {
         onClose={() => setShowSettingsModal(false)}
         emailNotifications={emailNotifications}
         inAppNotifications={inAppNotifications}
+        soundNotifications={soundNotifications}
         onToggleEmail={handleToggleEmailNotifications}
         onToggleInApp={handleToggleInAppNotifications}
+        onToggleSound={handleToggleSoundNotifications}
         loading={loading}
       />
     </nav>

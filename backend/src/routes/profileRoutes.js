@@ -28,4 +28,7 @@ router.put('/email-notifications', profileController.toggleEmailNotifications);
 // Toggle in-app notifications
 router.put('/inapp-notifications', profileController.toggleInAppNotifications);
 
+// Toggle sound notifications
+router.put('/sound-notifications', profileController.toggleSoundNotifications);
+
 module.exports = router;
