@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import ReportButton from './ReportButton';
 
 const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, onClick }) => {
@@ -32,6 +33,18 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
               </div>
             <p className="text-gray-600 mb-3 line-clamp-2">{report.description}</p>
             <div className="flex items-center gap-4 text-sm text-gray-500">
+              {report.createdBy && report.createdBy.userId && (
+                <Link 
+                  to={`/view-profile/${report.createdBy.userType.toLowerCase()}/${report.createdBy.userId._id || report.createdBy.userId}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  {report.createdBy.userId.name || 'View Profile'}
+                </Link>
+              )}
               <span className="flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -105,15 +118,29 @@ const ReportCard = ({ report, variant = 'grid', onDelete, showActions = false, o
         </div>
       )}
       <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          {!report.createdBy && (
+        {report.createdBy && report.createdBy.userId && (
+          <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+            <Link 
+              to={`/view-profile/${report.createdBy.userType.toLowerCase()}/${report.createdBy.userId._id || report.createdBy.userId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {report.createdBy.userId.name || 'View'}
+            </Link>
+          </div>
+        )}
+        {!report.createdBy && (
+          <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                 Anonymous
               </span>
             </div>
-          )}
-        </div>
+          </div>
+        )}
         <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1">{report.title}</h3>
         <p className="text-gray-600 text-sm mb-3 line-clamp-2">{report.description}</p>
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">

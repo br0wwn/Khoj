@@ -3,27 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import alertService from '../../services/alertService';
 import AlertCard from '../../components/AlertCard';
-import axios from 'axios';
-
-// Create adminApi instance
-const adminApi = axios.create({
-  baseURL: 'http://localhost:5001',
-  withCredentials: true
-});
-
-// Add request interceptor to include JWT token
-adminApi.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import adminApi from '../../services/adminApiService';
 
 const AdminPoliceProfile = () => {
   const { id } = useParams();

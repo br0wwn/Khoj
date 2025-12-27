@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
-import axios from 'axios';
-
-// Create admin axios instance
-const adminApi = axios.create({
-  baseURL: 'http://localhost:5001',
-});
-
-adminApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import adminApi from '../../services/adminApiService';
 
 const AdminAlertsPage = () => {
   const navigate = useNavigate();
@@ -26,7 +13,7 @@ const AdminAlertsPage = () => {
   const fetchAlerts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/alerts');
+      const response = await adminApi.get('/api/alerts');
       setAlerts(response.data.data || []);
     } catch (error) {
       console.error('Error fetching alerts:', error);
@@ -57,7 +44,7 @@ const AdminAlertsPage = () => {
 
   const handleStatusChange = async (alertId, newStatus) => {
     try {
-      await axios.put(`/api/alerts/${alertId}`, { status: newStatus });
+      await adminApi.put(`/api/alerts/${alertId}`, { status: newStatus });
       alert('Alert status updated successfully');
       fetchAlerts();
     } catch (error) {

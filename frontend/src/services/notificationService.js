@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/apiConfig';
 
-const API_URL = 'http://localhost:5001/api/notifications';
+const API_URL = API_ENDPOINTS.NOTIFICATIONS;
 
 const axiosInstance = axios.create({
     withCredentials: true

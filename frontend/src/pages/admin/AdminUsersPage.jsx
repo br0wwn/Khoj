@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
-import axios from 'axios';
-
-// Create admin axios instance
-const adminApi = axios.create({
-  baseURL: 'http://localhost:5001',
-});
-
-adminApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import adminApi from '../../services/adminApiService';
 
 const AdminUsersPage = () => {
   const navigate = useNavigate();

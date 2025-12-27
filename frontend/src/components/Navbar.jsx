@@ -60,16 +60,24 @@ const Navbar = () => {
       loadNotificationUnreadCount();
     };
 
+    const handleNotificationRead = () => {
+      loadNotificationUnreadCount();
+    };
+
     socket.on('message-notification', handleNotificationUpdate);
     socket.on('new-message', handleNotificationUpdate);
     socket.on('unread-count-updated', handleNotificationUpdate);
     socket.on('new-notification', handleNewNotification);
+    socket.on('notification-read', handleNotificationRead);
+    socket.on('notifications-read-all', handleNotificationRead);
 
     return () => {
       socket.off('message-notification', handleNotificationUpdate);
       socket.off('new-message', handleNotificationUpdate);
       socket.off('unread-count-updated', handleNotificationUpdate);
       socket.off('new-notification', handleNewNotification);
+      socket.off('notification-read', handleNotificationRead);
+      socket.off('notifications-read-all', handleNotificationRead);
     };
   }, [socket]);
 
@@ -163,7 +171,7 @@ const Navbar = () => {
                 e.preventDefault();
                 navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
               }}
-              className="flex-1 hidden sm:flex items-center bg-white/10 hover:bg-white/20 rounded-md px-3 py-1 mr-4"
+              className="hidden sm:flex items-center bg-white/10 hover:bg-white/20 rounded-md px-3 py-1 mr-4 max-w-xs"
             >
               <input
                 type="text"
@@ -183,10 +191,10 @@ const Navbar = () => {
           {/* Navigation Buttons */}
           <div className="flex items-center space-x-4">
             <Link
-              to="/"
+              to="/feed"
               className="px-4 py-2 rounded-md text-white hover:bg-white/20 transition-colors"
             >
-              Feed
+              Alerts
             </Link>
             <Link
               to="/report"

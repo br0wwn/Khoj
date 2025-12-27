@@ -87,7 +87,7 @@ const AlertCard = ({ alert, variant = 'grid', showContactButton = false }) => {
     // List view for profile page (1 per row)
     return (
       <div className="relative">
-        <Link to={`/alerts/${alert._id}`} className="block">
+        <div onClick={() => navigate(`/alerts/${alert._id}`)} className="block">
           <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
@@ -99,6 +99,18 @@ const AlertCard = ({ alert, variant = 'grid', showContactButton = false }) => {
                 </div>
               <p className="text-gray-600 mb-3 line-clamp-2">{alert.description}</p>
               <div className="flex items-center gap-4 text-sm text-gray-500">
+                {alert.createdBy && alert.createdBy.userId && (
+                  <Link 
+                    to={`/view-profile/${alert.createdBy.userType.toLowerCase()}/${alert.createdBy.userId._id || alert.createdBy.userId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    {alert.createdBy.userId.name || 'View Profile'}
+                  </Link>
+                )}
                 <span className="flex items-center gap-1">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -136,7 +148,7 @@ const AlertCard = ({ alert, variant = 'grid', showContactButton = false }) => {
             </div>
           )}
         </div>
-      </Link>
+      </div>
       <div className="absolute top-6 right-6">
         <ReportButton reportid={alert._id} reportModel="Alert" />
       </div>
@@ -147,7 +159,7 @@ const AlertCard = ({ alert, variant = 'grid', showContactButton = false }) => {
   // Grid view for feed page (2 columns)
   return (
     <div className="relative h-full">
-      <Link to={`/alerts/${alert._id}`} className="block h-full">
+      <div onClick={() => navigate(`/alerts/${alert._id}`)} className="block h-full">
         <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
         {/* Media Section - Always present with fixed height */}
         <div className="h-48 bg-gray-200 relative flex-shrink-0">
@@ -190,6 +202,20 @@ const AlertCard = ({ alert, variant = 'grid', showContactButton = false }) => {
             </span>
           </div>
           <p className="text-gray-600 text-sm mb-3 line-clamp-2">{alert.description}</p>
+          <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+            {alert.createdBy && alert.createdBy.userId && (
+              <Link 
+                to={`/view-profile/${alert.createdBy.userType.toLowerCase()}/${alert.createdBy.userId._id || alert.createdBy.userId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {alert.createdBy.userId.name || 'View'}
+              </Link>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -222,11 +248,11 @@ const AlertCard = ({ alert, variant = 'grid', showContactButton = false }) => {
           </div>
         </div>
       </div>
-    </Link>
-    <div className="absolute top-2 right-2 z-10">
-      <ReportButton reportid={alert._id} reportModel="Alert" />
+      </div>
+      <div className="absolute top-2 right-2 z-10">
+        <ReportButton reportid={alert._id} reportModel="Alert" />
+      </div>
     </div>
-  </div>
   );
 };
 

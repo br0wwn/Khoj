@@ -121,8 +121,8 @@ const Search = () => {
               <ul className="space-y-2">
                 {profiles.map(p => (
                   <li key={p.id} className="p-3 bg-white rounded shadow">
-                    <Link to={`/profile?id=${p.id}`} className="font-semibold text-primary-700">{p.name}</Link>
-                    <p className="text-sm text-gray-600">{p.userType}</p>
+                    <Link to={`/view-profile/${p.userType.toLowerCase()}/${p.id}`} className="font-semibold text-primary-700">{p.name}</Link>
+                    <p className="text-sm text-gray-600">{p.userType === 'Police' ? '👮 Police Officer' : '👤 Citizen'}</p>
                   </li>
                 ))}
               </ul>

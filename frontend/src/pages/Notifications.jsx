@@ -64,6 +64,10 @@ const Notifications = () => {
                     )
                 );
                 setUnreadCount(prev => Math.max(0, prev - 1));
+                // Emit socket event to update navbar
+                if (socket) {
+                    socket.emit('notification-read');
+                }
             } catch (error) {
                 console.error('Failed to mark as read:', error);
             }
@@ -80,6 +84,10 @@ const Notifications = () => {
             await markAllAsRead();
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
+            // Emit socket event to update navbar
+            if (socket) {
+                socket.emit('notifications-read-all');
+            }
         } catch (error) {
             console.error('Failed to mark all as read:', error);
         }

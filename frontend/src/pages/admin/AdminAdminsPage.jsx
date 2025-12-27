@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
-import axios from 'axios';
+import adminApi from '../../services/adminApiService';
 
 const AdminAdminsPage = () => {
   const [admins, setAdmins] = useState([]);
@@ -12,10 +12,12 @@ const AdminAdminsPage = () => {
 
   const fetchAdmins = async () => {
     try {
-      const response = await axios.get('http://localhost:5001/api/admin/list');
+      const response = await adminApi.get('/api/admin/list');
       setAdmins(response.data.admins || []);
     } catch (error) {
-      console.error('Error fetching admins:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error fetching admins:', error);
+      }
       setAdmins([]);
     } finally {
       setLoading(false);

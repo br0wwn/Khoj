@@ -37,10 +37,15 @@ const Report = () => {
   const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await reportService.getAllReports();
+      const response = await reportService.getAllReports();
       
-      // Ensure data is an array
-      const reportsArray = Array.isArray(data) ? data : [];
+      // Extract data from response - check both response.data and response.data.data
+      let reportsArray = [];
+      if (response.success && response.data) {
+        reportsArray = Array.isArray(response.data) ? response.data : [];
+      } else if (Array.isArray(response)) {
+        reportsArray = response;
+      }
       
       if (user) {
         const userReportsList = reportsArray.filter(report => {
@@ -81,11 +86,11 @@ const Report = () => {
   const applyFilters = useCallback(() => {
     let filtered = [...feedReports];
 
-    // Anonymous filter
+    // Anonymous filter - based on whether createdBy exists
     if (anonymousFilter === 'anonymous') {
-      filtered = filtered.filter(report => report.is_anonymous === true);
+      filtered = filtered.filter(report => !report.createdBy || !report.createdBy.userId);
     } else if (anonymousFilter === 'non-anonymous') {
-      filtered = filtered.filter(report => !report.is_anonymous);
+      filtered = filtered.filter(report => report.createdBy && report.createdBy.userId);
     }
 
     // Search filter

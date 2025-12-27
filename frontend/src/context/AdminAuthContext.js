@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/apiConfig';
 
 const AdminAuthContext = createContext();
 
@@ -31,7 +32,8 @@ export const AdminAuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('adminToken');
       if (storedToken) {
         try {
-          const response = await axios.get('http://localhost:5001/api/admin/auth/me', {
+          const baseUrl = API_BASE_URL || 'http://localhost:5001';
+          const response = await axios.get(`${baseUrl}/api/admin/auth/me`, {
             headers: { Authorization: `Bearer ${storedToken}` }
           });
           setAdmin(response.data.admin);
@@ -51,7 +53,8 @@ export const AdminAuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5001/api/admin/auth/login', {
+      const baseUrl = API_BASE_URL || 'http://localhost:5001';
+      const response = await axios.post(`${baseUrl}/api/admin/auth/login`, {
         email,
         password
       });
@@ -71,9 +74,12 @@ export const AdminAuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post('http://localhost:5001/api/admin/auth/logout');
+      const baseUrl = API_BASE_URL || 'http://localhost:5001';
+      await axios.post(`${baseUrl}/api/admin/auth/logout`);
     } catch (error) {
-      console.error('Logout error:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Logout error:', error);
+      }
     } finally {
       localStorage.removeItem('adminToken');
       setToken(null);
@@ -84,7 +90,8 @@ export const AdminAuthProvider = ({ children }) => {
 
   const signup = async (data) => {
     try {
-      const response = await axios.post('http://localhost:5001/api/admin/auth/signup', data);
+      const baseUrl = API_BASE_URL || 'http://localhost:5001';
+      const response = await axios.post(`${baseUrl}/api/admin/auth/signup`, data);
       
       const { admin, token } = response.data;
       localStorage.setItem('adminToken', token);

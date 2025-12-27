@@ -1,4 +1,4 @@
-const transporter = require('../config/resend');
+const transporter = require('../config/emailConfig');
 
 // Send new alert notification email
 exports.sendNewAlertEmail = async (userEmail, userName, alert) => {

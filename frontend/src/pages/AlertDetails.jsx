@@ -601,7 +601,7 @@ const AlertDetails = () => {
                 <div className="flex-1">
                   {alert.createdBy.userId ? (
                     <a
-                      href={`/profile/${alert.createdBy.userType === 'police' ? 'police' : 'user'}/${
+                      href={`/view-profile/${alert.createdBy.userType === 'police' ? 'police' : 'user'}/${
                         typeof alert.createdBy.userId === 'object' 
                           ? alert.createdBy.userId._id || alert.createdBy.userId.id
                           : alert.createdBy.userId

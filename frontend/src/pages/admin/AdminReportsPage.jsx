@@ -1,24 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import reportToAdminService from '../../services/reportToAdminService';
-import axios from 'axios';
+import adminApi from '../../services/adminApiService';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-
-// Create admin axios instance with backend URL and auth headers
-const adminApi = axios.create({
-  baseURL: 'http://localhost:5001',
-});
-
-// Add request interceptor to include auth token
-adminApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -131,25 +117,25 @@ const AdminReportsPage = () => {
       
       switch (report.reportModel) {
         case 'User':
-          response = await axios.get(`/api/profile/user/${reportid}`, {
+          response = await adminApi.get(`/api/profile/user/${reportid}`, {
             withCredentials: true
           });
           setReportedItem({ type: 'User', data: response.data.user });
           break;
         case 'Police':
-          response = await axios.get(`/api/profile/police/${reportid}`, {
+          response = await adminApi.get(`/api/profile/police/${reportid}`, {
             withCredentials: true
           });
           setReportedItem({ type: 'Police', data: response.data.police });
           break;
         case 'Alert':
-          response = await axios.get(`/api/alerts/${reportid}`, {
+          response = await adminApi.get(`/api/alerts/${reportid}`, {
             withCredentials: true
           });
           setReportedItem({ type: 'Alert', data: response.data.data });
           break;
         case 'Report':
-          response = await axios.get(`/api/reports/${reportid}`, {
+          response = await adminApi.get(`/api/reports/${reportid}`, {
             withCredentials: true
           });
           setReportedItem({ type: 'Report', data: response.data.data });

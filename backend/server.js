@@ -13,7 +13,7 @@ const adminAuthRoutes = require('./src/routes/adminAuthRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
 const policeProfileRoutes = require('./src/routes/policeProfileRoutes');
-const alertRoutes = require('./src/routes/alertroutes');
+const alertRoutes = require('./src/routes/alertRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const groupRoutes = require('./src/routes/groupRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
@@ -137,20 +137,6 @@ io.on('connection', (socket) => {
       }
     }
     console.log('User disconnected:', socket.id);
-  });
-});
-
-// Make connectedUsers available globally for chat controller
-global.connectedUsers = connectedUsers;
-global.io = io;
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 

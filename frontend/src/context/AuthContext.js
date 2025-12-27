@@ -21,8 +21,19 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize broadcast channel
   useEffect(() => {
-    // Create broadcast channel for cross-tab communication
-    authChannelRef.current = new BroadcastChannel('auth-channel');
+    // Check if BroadcastChannel is supported (not supported in older browsers)
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        // Create broadcast channel for cross-tab communication
+        authChannelRef.current = new BroadcastChannel('auth-channel');
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('Failed to create BroadcastChannel:', error);
+        }
+      }
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.warn('BroadcastChannel not supported in this browser');
+    }
     
     return () => {
       if (authChannelRef.current) {
@@ -37,7 +48,9 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for auth changes from other tabs
     const handleAuthMessage = (event) => {
-      console.log('Received auth message:', event.data);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Received auth message:', event.data);
+      }
       if (event.data.type === 'LOGIN') {
         setUser(event.data.user);
         setUserType(event.data.userType);
@@ -100,7 +113,9 @@ export const AuthProvider = ({ children }) => {
         
         // Notify other tabs about login
         if (authChannelRef.current) {
-          console.log('Broadcasting LOGIN to other tabs');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('Broadcasting LOGIN to other tabs');
+          }
           authChannelRef.current.postMessage({
             type: 'LOGIN',
             user: userData,
@@ -129,7 +144,9 @@ export const AuthProvider = ({ children }) => {
         
         // Notify other tabs about signup/login
         if (authChannelRef.current) {
-          console.log('Broadcasting SIGNUP/LOGIN to other tabs');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('Broadcasting SIGNUP/LOGIN to other tabs');
+          }
           authChannelRef.current.postMessage({
             type: 'LOGIN',
             user: newUser,
@@ -156,7 +173,9 @@ export const AuthProvider = ({ children }) => {
       
       // Notify other tabs about logout
       if (authChannelRef.current) {
-        console.log('Broadcasting LOGOUT to other tabs');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Broadcasting LOGOUT to other tabs');
+        }
         authChannelRef.current.postMessage({
           type: 'LOGOUT'
         });

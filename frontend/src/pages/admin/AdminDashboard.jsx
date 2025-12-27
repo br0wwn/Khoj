@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
-import axios from 'axios';
+import adminApi from '../../services/adminApiService';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -19,13 +19,10 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await axios.get('http://localhost:5001/api/admin/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      console.log('Dashboard response:', response.data);
+      const response = await adminApi.get('/api/admin/dashboard');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Dashboard response:', response.data);
+      }
       if (response.data.success) {
         setStats(response.data.stats);
       }

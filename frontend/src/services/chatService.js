@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/apiConfig';
 
-const API_URL = 'http://localhost:5001/api/chat';
+const API_URL = API_ENDPOINTS.CHAT;
 
 // Create axios instance with credentials
 const axiosInstance = axios.create({

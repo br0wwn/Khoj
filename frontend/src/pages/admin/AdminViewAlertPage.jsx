@@ -1,31 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
-import axios from 'axios';
+import adminApi from '../../services/adminApiService';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-
-// Fix Leaflet default icon issue
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-
-// Create admin axios instance
-const adminApi = axios.create({
-  baseURL: 'http://localhost:5001',
-});
-
-adminApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 const AdminViewAlertPage = () => {
   const { id } = useParams();
@@ -37,7 +16,7 @@ const AdminViewAlertPage = () => {
     const fetchAlert = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/alerts/${id}`);
+        const response = await adminApi.get(`/api/alerts/${id}`);
         setAlert(response.data.data);
       } catch (error) {
         console.error('Error fetching alert:', error);
@@ -70,7 +49,7 @@ const AdminViewAlertPage = () => {
 
   const handleStatusChange = async (newStatus) => {
     try {
-      await axios.put(`/api/alerts/${id}`, { status: newStatus });
+      await adminApi.put(`/api/alerts/${id}`, { status: newStatus });
       alert('Alert status updated successfully');
       setAlert({ ...alert, status: newStatus });
     } catch (error) {

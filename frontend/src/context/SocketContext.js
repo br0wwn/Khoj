@@ -32,30 +32,37 @@ export const SocketProvider = ({ children }) => {
         const userId = user.id;
 
         // Create socket connection
-        const newSocket = io('http://localhost:5001', {
+        const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001';
+        const newSocket = io(socketUrl, {
             withCredentials: true,
             transports: ['websocket', 'polling']
         });
 
         newSocket.on('connect', () => {
-            console.log('Socket connected:', newSocket.id);
-            console.log('Registering user ID:', userId);
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('Socket connected:', newSocket.id);
+                console.log('Registering user ID:', userId);
+            }
             setConnected(true);
             // Register user with their ID
             if (userId) {
                 newSocket.emit('register', userId);
-            } else {
+            } else if (process.env.NODE_ENV !== 'production') {
                 console.error('Cannot register: userId is null or undefined');
             }
         });
 
         newSocket.on('disconnect', () => {
-            console.log('Socket disconnected');
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('Socket disconnected');
+            }
             setConnected(false);
         });
 
         newSocket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
+            if (process.env.NODE_ENV !== 'production') {
+                console.error('Socket connection error:', error);
+            }
             setConnected(false);
         });
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/api/groups';
+const API_URL = 'http://localhost:5001/api/groups';
 
 const chatService = {
   // Send a message to a group (with optional media)

@@ -4,12 +4,14 @@ import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { SocketProvider } from './context/SocketContext';
 import Navbar from './components/Navbar.jsx';
+import Homepage from './pages/Homepage.jsx';
 import Feed from './pages/Feed.jsx';
 import Report from './pages/Report.jsx';
 import Group from './pages/Group.jsx';
 import Statistics from './pages/Statistics.jsx';
 import Profile from './pages/Profile.jsx';
 import UserProfile from './pages/UserProfile.jsx';
+import ViewProfile from './pages/ViewProfile.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import AlertDetails from './pages/AlertDetails.jsx';
@@ -134,13 +136,15 @@ function App() {
                   <Navbar />
                   <div className="pt-16">
                     <Routes>
-                      <Route path="/" element={<Feed />} />
+                      <Route path="/" element={<Homepage />} />
+                      <Route path="/feed" element={<Feed />} />
                       <Route path="/alerts/:id" element={<AlertDetails />} />
                       <Route path="/report" element={<Report />} />
                       <Route path="/group" element={<Group />} />
                       <Route path="/statistics" element={<Statistics />} />
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/profile/:type/:id" element={<UserProfile />} />
+                      <Route path="/view-profile/:type/:id" element={<ViewProfile />} />
                       <Route path="/chat" element={<Chat />} />
                       <Route path="/chat/:chatId" element={<ChatWindow />} />
                       <Route path="/notifications" element={<Notifications />} />
