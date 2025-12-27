@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getConversations } from '../services/chatService';
 import { useSocket } from '../context/SocketContext';
-import { useAuth } from '../context/AuthContext';
 
 const Chat = () => {
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedConversation, setSelectedConversation] = useState(null);
     const { socket } = useSocket();
-    const { user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {

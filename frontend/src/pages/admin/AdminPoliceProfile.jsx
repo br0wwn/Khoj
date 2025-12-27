@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
-import alertService from '../../services/alertService';
 import AlertCard from '../../components/AlertCard';
 import adminApi from '../../services/adminApiService';
 
@@ -18,12 +17,14 @@ const AdminPoliceProfile = () => {
 
   useEffect(() => {
     fetchPolice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
     if (activeTab === 'alerts' && police) {
       fetchPoliceAlerts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, police]);
 
   const fetchPolice = async () => {

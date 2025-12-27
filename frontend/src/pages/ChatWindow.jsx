@@ -29,6 +29,7 @@ const ChatWindow = () => {
             setAlert(location.state.conversation.alert);
         }
         loadMessages();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [conversationId]);
 
     // Join conversation room and listen for real-time events

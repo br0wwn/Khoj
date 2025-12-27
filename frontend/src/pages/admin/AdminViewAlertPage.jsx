@@ -4,7 +4,6 @@ import AdminLayout from '../../components/AdminLayout';
 import adminApi from '../../services/adminApiService';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 
 const AdminViewAlertPage = () => {
   const { id } = useParams();
@@ -30,6 +29,7 @@ const AdminViewAlertPage = () => {
     if (id) {
       fetchAlert();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, navigate]);
 
   const handleDelete = async () => {

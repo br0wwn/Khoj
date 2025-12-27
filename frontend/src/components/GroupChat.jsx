@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import chatService from '../services/grpChatService';
 
 const GroupChat = ({ groupId, currentUser }) => {
@@ -12,24 +12,7 @@ const GroupChat = ({ groupId, currentUser }) => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Load messages on mount
-  useEffect(() => {
-    loadMessages();
-    // Poll for new messages every 2 seconds
-    const interval = setInterval(loadMessages, 2000);
-    return () => clearInterval(interval);
-  }, [groupId]);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     try {
       setError(null);
       const response = await chatService.getGroupMessages(groupId);
@@ -44,6 +27,23 @@ const GroupChat = ({ groupId, currentUser }) => {
     } finally {
       setLoading(false);
     }
+  }, [groupId, loading]);
+
+  // Load messages on mount
+  useEffect(() => {
+    loadMessages();
+    // Poll for new messages every 2 seconds
+    const interval = setInterval(loadMessages, 2000);
+    return () => clearInterval(interval);
+  }, [groupId, loadMessages]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleFileSelect = (e) => {

@@ -67,6 +67,7 @@ const ViewProfile = () => {
     if (activeTab === 'alerts' && profile) {
       fetchUserAlerts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, profile]);
 
   // Fetch user's reports when reports tab is active
@@ -74,6 +75,7 @@ const ViewProfile = () => {
     if (activeTab === 'reports' && profile) {
       fetchUserReports();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, profile]);
 
   const fetchUserAlerts = async () => {

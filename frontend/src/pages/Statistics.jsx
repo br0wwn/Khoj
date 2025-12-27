@@ -19,6 +19,7 @@ const Statistics = () => {
     if (selectedDistrict) {
       fetchDistrictStatistics();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDistrict]);
 
   const fetchInitialData = async () => {

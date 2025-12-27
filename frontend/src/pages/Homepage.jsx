@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import alertService from '../services/alertService';
 import areaData from '../data/area.json';
@@ -7,7 +7,6 @@ import { Turnstile } from '@marsidev/react-turnstile';
 
 const Homepage = () => {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedUpazila, setSelectedUpazila] = useState('');
   const [alertCount, setAlertCount] = useState(null);
@@ -16,6 +15,9 @@ const Homepage = () => {
   const [upazilas, setUpazilas] = useState([]);
   const [showVerification, setShowVerification] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+  const [turnstileLoading, setTurnstileLoading] = useState(true);
+  const [turnstileTimeout, setTurnstileTimeout] = useState(false);
 
   // Check if user has been verified before
   useEffect(() => {
@@ -36,7 +38,53 @@ const Homepage = () => {
     sessionStorage.setItem('turnstile_verified', 'true');
     setIsVerified(true);
     setShowVerification(false);
+    setTurnstileLoading(false);
+    setTurnstileTimeout(false);
   };
+
+  const handleTurnstileError = () => {
+    console.log('Turnstile error occurred, refreshing widget...');
+    setTurnstileLoading(false);
+    // Force re-render of Turnstile widget after a delay
+    setTimeout(() => {
+      setTurnstileKey(prev => prev + 1);
+      setTurnstileLoading(true);
+    }, 500);
+  };
+
+  const handleTurnstileLoad = () => {
+    setTurnstileLoading(false);
+  };
+
+  const skipVerification = () => {
+    // Allow user to skip if taking too long
+    sessionStorage.setItem('turnstile_verified', 'true');
+    setIsVerified(true);
+    setShowVerification(false);
+  };
+
+  // Add timeout handler for slow Turnstile loading
+  useEffect(() => {
+    if (showVerification && !isVerified) {
+      // Reset loading state when modal shows
+      setTurnstileLoading(true);
+      
+      // Hide loading message after 3 seconds even if onLoad doesn't fire
+      const loadingTimer = setTimeout(() => {
+        setTurnstileLoading(false);
+      }, 3000);
+      
+      // Show skip option after 5 seconds
+      const timeoutTimer = setTimeout(() => {
+        setTurnstileTimeout(true);
+      }, 5000);
+
+      return () => {
+        clearTimeout(loadingTimer);
+        clearTimeout(timeoutTimer);
+      };
+    }
+  }, [showVerification, isVerified]);
 
   // Update upazilas when district changes
   useEffect(() => {
@@ -144,15 +192,46 @@ const Homepage = () => {
               </p>
             </div>
             
-            <div className="flex justify-center mb-4">
+            <div className="flex justify-center mb-4 relative min-h-[65px]">
+              {turnstileLoading && (
+                <div className="absolute inset-0 flex items-center justify-center z-10">
+                  <div className="flex items-center gap-2 text-gray-400 text-sm">
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Loading verification...</span>
+                  </div>
+                </div>
+              )}
               <Turnstile
+                key={turnstileKey}
                 siteKey={process.env.REACT_APP_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
                 onSuccess={handleTurnstileSuccess}
-                onError={() => setShowVerification(true)}
+                onError={handleTurnstileError}
+                onExpire={handleTurnstileError}
+                onTimeout={handleTurnstileError}
+                onLoad={handleTurnstileLoad}
                 theme="dark"
                 size="normal"
+                retry="auto"
+                retryInterval={8000}
+                refreshExpired="auto"
+                execution="render"
+                appearance="always"
               />
             </div>
+            
+            {turnstileTimeout && (
+              <div className="text-center mb-4">
+                <button
+                  onClick={skipVerification}
+                  className="text-blue-400 hover:text-blue-300 text-sm underline"
+                >
+                  Taking too long? Click here to skip verification
+                </button>
+              </div>
+            )}
             
             <p className="text-xs text-gray-400 text-center">
               This verification helps protect our community from automated threats

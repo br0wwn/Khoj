@@ -36,7 +36,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated }) => {
     } else {
       setUpazilas([]);
     }
-  }, [formData.district]);
+  }, [formData.district, districts]);
 
   const loadUsers = async () => {
     setLoading(true);
