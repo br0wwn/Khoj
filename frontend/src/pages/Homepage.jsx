@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import alertService from '../services/alertService';
 import areaData from '../data/area.json';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 const Homepage = () => {
   const { isAuthenticated } = useAuth();
@@ -13,6 +14,29 @@ const Homepage = () => {
   const [loading, setLoading] = useState(false);
   const [districts] = useState([...areaData].sort((a, b) => a.district.localeCompare(b.district)));
   const [upazilas, setUpazilas] = useState([]);
+  const [showVerification, setShowVerification] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+
+  // Check if user has been verified before
+  useEffect(() => {
+    const verified = sessionStorage.getItem('turnstile_verified');
+    if (verified === 'true') {
+      setIsVerified(true);
+    } else {
+      // Show verification modal after a short delay
+      const timer = setTimeout(() => {
+        setShowVerification(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleTurnstileSuccess = (token) => {
+    // Store verification in session storage
+    sessionStorage.setItem('turnstile_verified', 'true');
+    setIsVerified(true);
+    setShowVerification(false);
+  };
 
   // Update upazilas when district changes
   useEffect(() => {
@@ -108,6 +132,35 @@ const Homepage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Verification Modal for First Visit */}
+      {showVerification && !isVerified && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 border border-gray-700 animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-4">🔒</div>
+              <h2 className="text-2xl font-bold text-white mb-2">Security Verification</h2>
+              <p className="text-gray-300">
+                Please verify you're human to access Khoj
+              </p>
+            </div>
+            
+            <div className="flex justify-center mb-4">
+              <Turnstile
+                siteKey={process.env.REACT_APP_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                onSuccess={handleTurnstileSuccess}
+                onError={() => setShowVerification(true)}
+                theme="dark"
+                size="normal"
+              />
+            </div>
+            
+            <p className="text-xs text-gray-400 text-center">
+              This verification helps protect our community from automated threats
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-red-900 opacity-90"></div>
