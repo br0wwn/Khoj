@@ -55,8 +55,12 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['set-cookie']
 }));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
 
 // Socket.IO setup with CORS
 const io = new Server(server, {

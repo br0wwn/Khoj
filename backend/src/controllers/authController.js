@@ -77,6 +77,10 @@ exports.login = async (req, res) => {
     // Create session
     await authUtils.createSession(req, user._id, 'citizen');
 
+    console.log('✅ Login successful for user:', user.email);
+    console.log('   Session ID:', req.sessionID);
+    console.log('   Session data:', req.session);
+
     authUtils.sendSuccessResponse(res, 200, 'Login successful', {
       user: authUtils.formatUserResponse(user, 'citizen')
     });
