@@ -39,7 +39,7 @@ exports.signup = async (req, res) => {
     });
 
     // Create session
-    authUtils.createSession(req, user._id, 'citizen');
+    await authUtils.createSession(req, user._id, 'citizen');
 
     authUtils.sendSuccessResponse(res, 201, 'User registered successfully', {
       user: authUtils.formatUserResponse(user, 'citizen')
@@ -75,7 +75,7 @@ exports.login = async (req, res) => {
     }
 
     // Create session
-    authUtils.createSession(req, user._id, 'citizen');
+    await authUtils.createSession(req, user._id, 'citizen');
 
     authUtils.sendSuccessResponse(res, 200, 'Login successful', {
       user: authUtils.formatUserResponse(user, 'citizen')

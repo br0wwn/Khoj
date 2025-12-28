@@ -33,17 +33,24 @@ const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [process.env.FRONTEND_URL, process.env.FRONTEND_URL_2].filter(Boolean)
   : ['http://localhost:3000', 'http://localhost:3001'];
 
+console.log('🌐 CORS Configuration:');
+console.log('  Environment:', process.env.NODE_ENV || 'development');
+console.log('  Allowed Origins:', allowedOrigins);
+
 // Middleware - CORS must come before other middleware
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('📨 Request from origin:', origin);
+    
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.warn(`Blocked by CORS: ${origin}`);
-      callback(null, true); // Allow in production to avoid issues, log for debugging
+      console.warn(`⚠️  CORS blocked: ${origin}`);
+      console.warn(`   Expected one of:`, allowedOrigins);
+      callback(null, true); // Still allow but log warning
     }
   },
   credentials: true,
@@ -81,14 +88,17 @@ const sessionSecret = process.env.SESSION_SECRET || 'unsafe-default-secret-chang
 
 app.use(session({
   secret: sessionSecret,
+  name: 'khoj.sid', // Custom cookie name
   resave: false,
   saveUninitialized: false,
   store: sessionStore,
+  proxy: true, // Trust proxy (required for Render)
   cookie: {
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production', // true in production (requires HTTPS)
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? undefined : undefined // Let browser handle domain
   }
 }));
 

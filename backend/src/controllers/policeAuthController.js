@@ -68,7 +68,7 @@ exports.signup = async (req, res) => {
         });
 
         // Create session - login immediately
-        authUtils.createSession(req, police._id, 'police');
+        await authUtils.createSession(req, police._id, 'police');
 
         authUtils.sendSuccessResponse(res, 201, 'Police officer registered successfully.', {
             police: authUtils.formatUserResponse(police, 'police'),
@@ -105,7 +105,7 @@ exports.login = async (req, res) => {
         }
 
         // Create session (no verification check needed)
-        authUtils.createSession(req, police._id, 'police');
+        await authUtils.createSession(req, police._id, 'police');
 
         authUtils.sendSuccessResponse(res, 200, 'Login successful', {
             police: authUtils.formatUserResponse(police, 'police'),

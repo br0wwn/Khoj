@@ -7,10 +7,23 @@
  * @param {Object} req - Express request object
  * @param {String} userId - User/Police ID
  * @param {String} userType - 'citizen' or 'police'
+ * @returns {Promise} - Resolves when session is saved
  */
 exports.createSession = (req, userId, userType) => {
-  req.session.userId = userId;
-  req.session.userType = userType;
+  return new Promise((resolve, reject) => {
+    req.session.userId = userId;
+    req.session.userType = userType;
+    
+    // Explicitly save session to ensure it's persisted
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error saving session:', err);
+        return reject(err);
+      }
+      console.log('Session created and saved:', req.sessionID);
+      resolve();
+    });
+  });
 };
 
 /**
@@ -31,7 +44,7 @@ exports.destroySession = (req, res) => {
       }
 
       // Clear the session cookie
-      res.clearCookie('connect.sid', {
+      res.clearCookie('khoj.sid', {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
