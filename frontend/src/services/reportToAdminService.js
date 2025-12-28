@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/apiConfig';
 
-const API_URL = '/api/report-to-admin';
+const API_URL = API_ENDPOINTS.REPORT_TO_ADMIN;
 
 const reportToAdminService = {
   // Create a report to admin

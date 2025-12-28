@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/apiConfig';
 
-const API_URL = '/api/groups';
+const API_URL = API_ENDPOINTS.GROUPS;
 
 axios.defaults.withCredentials = true;
 

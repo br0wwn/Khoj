@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/apiConfig';
 
-const API_URL = '/api/alerts';
+const API_URL = API_ENDPOINTS.ALERTS;
 
 // Configure axios to send cookies
 axios.defaults.withCredentials = true;

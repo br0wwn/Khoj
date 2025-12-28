@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/apiConfig';
 
-const API_URL = '/api/social-shares';
+const API_URL = API_ENDPOINTS.SOCIAL_SHARE;
 
 axios.defaults.withCredentials = true;
 

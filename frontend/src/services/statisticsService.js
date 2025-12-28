@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/apiConfig';
 
-const API_URL = '/api/statistics';
+const API_URL = API_ENDPOINTS.STATISTICS;
 
 axios.defaults.withCredentials = true;
 
